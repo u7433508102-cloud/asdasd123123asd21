@@ -1,0 +1,5195 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local HttpService = game:GetService("HttpService")
+local TextService = game:GetService("TextService")
+
+local client = Players.LocalPlayer
+local mouse = client:GetMouse()
+local camera = workspace.CurrentCamera
+local playerGui = client:WaitForChild("PlayerGui")
+
+getgenv().__ARCHNEM_RUNTIME = getgenv().__ARCHNEM_RUNTIME or {}
+
+-- Cleanup previous runtime instances if reloading
+if getgenv().__ARCHNEM_RUNTIME.unload then
+    pcall(function() getgenv().__ARCHNEM_RUNTIME:unload() end)
+end
+getgenv().__ARCHNEM_RUNTIME = {}
+
+getgenv().ARCHNEM = {
+	aimbot = {
+		Settings = {
+			Enabled = false, Sticky = false,
+			Easing = "Delta2", Key = Enum.KeyCode.C, KeyMode = "Hold", Part = "Head",
+			FOV = { Visible = false, Radius = 300, Transparency = 0.9 },
+			KnockCheck = false, WallCheck = false, UnlockOnOwnDeath = false, CheckIfTargetDead = false
+		},
+		Configuration = {
+			OffsetControllage = false, Offset = { X = 0, Y = 0.3 }, Spam = { Enabled = false, Amount = 3.7 },
+			Prediction = { Enabled = true, JumpOffsetEnabled = false, New = { X = 9, Y = 7.4, YJump = 7.4, YFall = 7.4 } },
+			FrameSkip = { Enabled = false, Power = 0.98, UsePrediction = true, TargetPart = { Enabled = true, Part = "Head" }, KeyBind = "Q" },
+			Smooth = { Enabled = false, X = 0.78, Y = 0.78 },
+			Shake = { false, 1, 1, 1 },
+			EasingConfig = { Calculation = 0.0, Delta = 0.0, Rapid = 0.0, Offset = 0.0, Controllage = 0.0 },
+			CustomEasingConfig = { Control = 0.0, Alpha = 1 },
+			CamSmooth = { Enabled = false, X = 0.15, Y = 0.15 },
+			PullResistance = { Enabled = false, Strength = 0.5 }
+		}
+	},
+	silent = {
+		Settings = {
+			Part = "HumanoidRootPart", Type = "Target", ClosestPart = false,
+			General = { Enabled = false, Prediction = { false, 0.000 } },
+			Visuals = { FOVTransparency = 1, FOVRadius = 50, FOVVisible = false },
+			Visualizetarget = { Enabled = true }
+		}
+	},
+	Key360 = { Toggle = false, RotationSpeed = 8000, Keybind = Enum.KeyCode.V },
+	misc = {
+		Headless = false,
+		HeadlessAll = false,
+		Korblox = false,
+		Walkspeed = { Key = Enum.KeyCode.Z, Enabled = false, Speed = 400, Active = false },
+		Macro = { Key = Enum.KeyCode.X, Enabled = false },
+		Radar = { Enabled = false, Friends = false, Distance = 500, Size = 120, Position = { 1750, 80 } },
+		BulletChanger = {
+			Enabled = false,
+			DoubleBarrel = "Default",
+			Revolver = "Default",
+			Shotgun = "Default",
+			SMG = "Default",
+			TacticalShotgun = "Default"
+		},
+		AntiVoid = { Enabled = true, VoidThreshold = -500, CheckOffset = 5, TeleportHeight = 5, SafePosition = Vector3.new(0, 0, 0) },
+		SkinChanger = {
+			Enabled = false,
+			DoubleBarrel = "Default",
+			Revolver = "Default",
+			TacticalShotgun = "Default",
+			SMG = "Default",
+			Shotgun = "Default",
+			Knife = "Default"
+		},
+		World = {
+			TimeChanger = { Enabled = false, Value = 12 },
+			TexturePack = { Enabled = false, Preset = "winter" },
+			Skybox = { Enabled = false, Type = "realistic" },
+			Atmosphere = {
+				Enabled = false,
+				Density = 0.3,
+				Offset = 0,
+				Glare = 0,
+				Haze = 0,
+				Color = Color3.fromRGB(199, 220, 255),
+				Decay = Color3.fromRGB(255, 200, 150)
+			},
+			Lighting = {
+				CustomAmbient = { Enabled = false, Color = Color3.fromRGB(127, 127, 127) },
+				CustomOutdoorAmbient = { Enabled = false, Color = Color3.fromRGB(127, 127, 127) },
+				CustomFog = { Enabled = false, Color = Color3.fromRGB(200, 200, 220), Start = 0, End = 1000 },
+				Brightness = { Enabled = false, Value = 2 }
+			}
+		}
+	},
+	esp = {
+		BoxOutlineColor = Color3.new(0, 0, 0),
+		BoxColor = Color3.new(1, 1, 1),
+		FilledBoxColor = Color3.new(1, 1, 1),
+		NameColor = Color3.new(1, 1, 1),
+		HealthOutlineColor = Color3.new(0, 0, 0),
+		HealthHighColor = Color3.new(0, 1, 0),
+		HealthLowColor = Color3.new(1, 0, 0),
+		HealthColor = Color3.new(1, 1, 1),
+		AnimatedHealthBars = false,
+		DistanceColor = Color3.new(1, 1, 1),
+		HealthBasedColor = false,
+		Teamcheck = false,
+		WallCheck = false,
+		Enabled = false,
+		ShowFilledBox = false,
+		ShowBox = false,
+		BoxType = "Normal",
+		ShowName = false,
+		ShowHealth = false,
+		ShowDistance = false,
+	},
+	weather = {
+		Enabled = false,           -- дождь НЕ включается автоматически при загрузке скрипта
+		Preset = "None",           -- None / Rain / Snow / Sandstorm / Thunderstorm (ставится только из меню)
+		Intensity = 1.0,           -- общий множитель плотности частиц
+		FollowCamera = true,       -- эффект всегда вокруг игрока
+		GroundFX = false,          -- убраны лужи на земле; остаются только брызги от капель
+		Rain = { Enabled = true, Rate = 60, Speed = 42, Color = Color3.fromRGB(198, 220, 240), Splash = true },
+		Snow = { Enabled = false, Rate = 220, Speed = 12, Color = Color3.fromRGB(255, 255, 255), Swirl = true },
+		Sand = { Enabled = false, Rate = 300, Speed = 55, Color = Color3.fromRGB(206, 168, 106), Haze = true },
+		Wind = { Enabled = false, Direction = 0, Strength = 25, CameraShake = true, ShakePower = 0.35 },
+		Lightning = { Enabled = false, Interval = 6, Flash = 0.55, Bolts = true, Color = Color3.fromRGB(200, 220, 255) },
+		Fog = { Enabled = false, Density = 0.35 }
+	}
+}
+
+local applyKorblox, applySkinChanger, applyBulletChanger
+local updateAimbotFOV, updateFOVCircle, applyWalkspeed, updateRadar, updateEsp
+local applyHeadlessLocal, removeHeadlessLocal, startHeadlessHeartbeat, stopHeadlessHeartbeat
+local applyTimeChanger, applyTexturePack, clearTexturePack, applySkyboxPreset, getOrCreateAtmosphere, removeAtmosphere
+
+-- FONT CONFIGURATION & CUSTOM MONOCRAFT LOADER (FROM ARCHNEM UI)
+-- ==============================================================================
+
+local FONT_CONFIG = {
+    Name = "Monocraft",
+    Url = "https://raw.githubusercontent.com/IdreesInc/Monocraft/main/dist/Monocraft-ttf/Monocraft.ttf",
+    Folder = "archnem_fonts",
+    Weight = 400,
+    Fallback = "rbxasset://fonts/families/PressStart2P.json",
+    TextSizeScale = 1.0,
+    MinTextSize   = 12,
+    ForceRedownload = false,
+}
+
+local UI_FONT
+local FONT_SOURCE = "?"
+
+do
+    local _writefile   = rawget(getfenv(), "writefile")   or writefile
+    local _isfile      = rawget(getfenv(), "isfile")      or isfile
+    local _isfolder    = rawget(getfenv(), "isfolder")    or isfolder
+    local _makefolder  = rawget(getfenv(), "makefolder")  or makefolder
+    local _getcustom   = rawget(getfenv(), "getcustomasset")
+                      or rawget(getfenv(), "getsynasset")
+                      or getcustomasset
+    local syn          = rawget(getfenv(), "syn")
+    local request      = rawget(getfenv(), "request")
+    local http_request = rawget(getfenv(), "http_request")
+
+    local function safeFont(family, weight, style)
+        local ok, f = pcall(function()
+            return Font.new(family, weight or Enum.FontWeight.Regular,
+                            style or Enum.FontStyle.Normal)
+        end)
+        if ok and f then return f end
+        return nil
+    end
+
+    local function loadCustomFont()
+        if not (_writefile and _getcustom) then
+            warn("[Archnem] Экзекьютор не поддерживает writefile/getcustomasset")
+            return nil
+        end
+
+        local folder  = FONT_CONFIG.Folder
+        local ttfPath  = folder .. "/" .. FONT_CONFIG.Name .. ".ttf"
+        local jsonPath = folder .. "/" .. FONT_CONFIG.Name .. ".json"
+
+        if _makefolder and _isfolder and not _isfolder(folder) then
+            pcall(_makefolder, folder)
+        elseif _makefolder and not _isfolder then
+            pcall(_makefolder, folder)
+        end
+
+        local needDownload = FONT_CONFIG.ForceRedownload
+            or not (_isfile and _isfile(ttfPath))
+
+        if needDownload then
+            local ok, data = pcall(function()
+                if syn and syn.request then
+                    return syn.request({ Url = FONT_CONFIG.Url, Method = "GET" }).Body
+                elseif request then
+                    return request({ Url = FONT_CONFIG.Url, Method = "GET" }).Body
+                elseif http_request then
+                    return http_request({ Url = FONT_CONFIG.Url, Method = "GET" }).Body
+                else
+                    return game:HttpGet(FONT_CONFIG.Url, true)
+                end
+            end)
+
+            if not ok or type(data) ~= "string" or #data < 1000 then
+                warn("[Archnem] Не удалось скачать шрифт:", tostring(data))
+                return nil
+            end
+
+            local okw = pcall(_writefile, ttfPath, data)
+            if not okw then
+                warn("[Archnem] writefile для .ttf не сработал")
+                return nil
+            end
+        end
+
+        local okA, ttfAsset = pcall(_getcustom, ttfPath)
+        if not okA or not ttfAsset then
+            warn("[Archnem] getcustomasset для .ttf не сработал")
+            return nil
+        end
+
+        local familyJson = string.format(
+            '{"name":"%s","faces":[{"name":"Regular","weight":%d,"style":"normal","assetId":"%s"}]}',
+            FONT_CONFIG.Name, FONT_CONFIG.Weight, ttfAsset
+        )
+        local okj = pcall(_writefile, jsonPath, familyJson)
+        if not okj then
+            warn("[Archnem] writefile для .json не сработал")
+            return nil
+        end
+
+        local okB, jsonAsset = pcall(_getcustom, jsonPath)
+        if not okB or not jsonAsset then
+            warn("[Archnem] getcustomasset для .json не сработал")
+            return nil
+        end
+
+        return safeFont(jsonAsset)
+    end
+
+    local ok, result = pcall(loadCustomFont)
+    if ok and result then
+        UI_FONT = result
+        FONT_SOURCE = FONT_CONFIG.Name .. " (custom ttf)"
+    end
+
+    if not UI_FONT then
+        UI_FONT = safeFont(FONT_CONFIG.Fallback)
+        if UI_FONT then FONT_SOURCE = "Press Start 2P (fallback)" end
+    end
+
+    if not UI_FONT then
+        UI_FONT = Font.fromEnum(Enum.Font.Arcade)
+        FONT_SOURCE = "Arcade (last resort)"
+    end
+end
+
+local COLORS = {
+    Background       = Color3.fromRGB(8, 8, 9), -- Ultra-dark grey #080809
+    PanelBg          = Color3.fromRGB(11, 11, 13), -- Slightly lighter grey than #080809
+    PanelBorder      = Color3.fromRGB(75, 15, 27),
+    Accent           = Color3.fromRGB(141, 19, 38),
+    AccentDark       = Color3.fromRGB(85, 11, 23),
+    AccentGlow       = Color3.fromRGB(185, 35, 58),
+    TextPrimary      = Color3.fromRGB(255, 255, 255), -- Pure white #FFFFFF
+    TextSecondary    = Color3.fromRGB(225, 225, 230), -- Pure bright silver #E1E1E6
+    TextMuted        = Color3.fromRGB(170, 170, 175), -- Neutral grey #AAAAAF
+    ButtonBg         = Color3.fromRGB(30, 12, 17),
+    ButtonHover      = Color3.fromRGB(48, 16, 24),
+    DropdownBg       = Color3.fromRGB(24, 10, 14),
+    DropdownBorder   = Color3.fromRGB(82, 17, 30),
+    TitleGradient1   = Color3.fromRGB(185, 35, 58),
+    TitleGradient2   = Color3.fromRGB(110, 13, 30),
+    SidebarIcon      = Color3.fromRGB(141, 19, 38),
+    SidebarIconHover = Color3.fromRGB(190, 40, 62),
+    CheckboxBg       = Color3.fromRGB(27, 10, 15),
+    CheckboxBorder   = Color3.fromRGB(88, 18, 32),
+}
+
+local function tween(obj, props, duration, style, dir)
+    duration = duration or 0.2
+    style = style or Enum.EasingStyle.Quad
+    dir = dir or Enum.EasingDirection.Out
+    local t = TweenService:Create(obj, TweenInfo.new(duration, style, dir), props)
+    t:Play()
+    return t
+end
+
+
+-- ==============================================================================
+-- SCREEN GUI & ARCHNEM UI FRAMEWORK (REPLACING VADERPASTE)
+-- ==============================================================================
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ArchnemUI"
+screenGui.ResetOnSpawn = false
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+screenGui.DisplayOrder = 100
+screenGui.IgnoreGuiInset = true
+screenGui.Parent = playerGui
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 620, 0, 420)
+mainFrame.Position = UDim2.new(0.5, -310, 0.5, -210)
+mainFrame.BackgroundColor3 = COLORS.Background
+mainFrame.BorderSizePixel = 0
+mainFrame.ClipsDescendants = false
+mainFrame.Parent = screenGui
+
+
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 0)
+mainCorner.Parent = mainFrame
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Color = Color3.fromRGB(0, 0, 0)
+mainStroke.Thickness = 2
+mainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+mainStroke.Parent = mainFrame
+
+local titleBar = Instance.new("Frame")
+titleBar.Name = "TitleBar"
+titleBar.Size = UDim2.new(1, 0, 0, 45)
+titleBar.BackgroundColor3 = Color3.fromRGB(3, 2, 3)
+titleBar.BorderSizePixel = 0
+titleBar.Active = true
+titleBar.ZIndex = 5
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 0)
+titleCorner.Parent = titleBar
+
+local TITLE_ICON_ID = "rbxassetid://75416230891223"
+local titleIcon = Instance.new("ImageLabel")
+titleIcon.Size = UDim2.new(0, 45, 1, 0)
+titleIcon.Position = UDim2.new(0, 6, 0, 0)
+titleIcon.Image = TITLE_ICON_ID
+titleIcon.BackgroundTransparency = 1
+titleIcon.ScaleType = Enum.ScaleType.Fit
+titleIcon.ZIndex = 6
+titleIcon.Active = false
+titleIcon.Parent = titleBar
+
+local titleText = "archnem"
+local charSpacing = 2
+local titleMoveUp = 1
+
+local titleCharsHolder = Instance.new("Frame")
+titleCharsHolder.Name = "TitleText"
+titleCharsHolder.BackgroundTransparency = 1
+titleCharsHolder.AutomaticSize = Enum.AutomaticSize.X
+titleCharsHolder.Size = UDim2.new(0, 0, 1, 0)
+titleCharsHolder.AnchorPoint = Vector2.new(0.5, 0.5)
+titleCharsHolder.Position = UDim2.new(0.5, 0, 0.5, 0)
+titleCharsHolder.ZIndex = 6
+titleCharsHolder.Active = false
+titleCharsHolder.Parent = titleBar
+
+local titleLayout = Instance.new("UIListLayout")
+titleLayout.FillDirection = Enum.FillDirection.Horizontal
+titleLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+titleLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+titleLayout.Padding = UDim.new(0, charSpacing)
+titleLayout.Parent = titleCharsHolder
+
+for i = 1, #titleText do
+    local charLabel = Instance.new("TextLabel")
+    charLabel.BackgroundTransparency = 1
+    charLabel.Size = UDim2.new(0, 0, 1, 0)
+    charLabel.AutomaticSize = Enum.AutomaticSize.X
+    charLabel.Text = titleText:sub(i, i)
+    charLabel.FontFace = UI_FONT
+    charLabel.TextSize = 40
+    charLabel:SetAttribute("NoFontScale", true)
+    charLabel.TextColor3 = Color3.fromRGB(141, 19, 38)
+    charLabel.TextStrokeColor3 = Color3.fromRGB(70, 8, 18)
+    charLabel.TextStrokeTransparency = 0
+    charLabel.ZIndex = 6
+    charLabel.Parent = titleCharsHolder
+end
+
+local dragButton = Instance.new("TextButton")
+dragButton.Size = UDim2.new(1, 0, 1, 0)
+dragButton.Position = UDim2.new(0, 0, 0, 0)
+dragButton.BackgroundTransparency = 1
+dragButton.Text = ""
+dragButton.ZIndex = 7
+dragButton.Active = true
+dragButton.Parent = titleBar
+
+local sidebar = Instance.new("Frame")
+sidebar.Name = "Sidebar"
+sidebar.Size = UDim2.new(0, 50, 1, -45)
+sidebar.Position = UDim2.new(0, 0, 0, 45)
+sidebar.BackgroundColor3 = COLORS.Background
+sidebar.BorderSizePixel = 0
+sidebar.ZIndex = 4
+sidebar.Parent = mainFrame
+
+local sidebarIconsData = {
+    { assetId = "rbxassetid://7300477598", tooltip = "Aim Bot" },
+    { assetId = "rbxassetid://7300535052", tooltip = "Silent Aim" },
+    { assetId = "rbxassetid://7300480952", tooltip = "ESP" },
+    { assetId = "rbxassetid://71706132468492", iconSize = 30, bgSize = 30, tooltip = "Settings / Visuals / World" },
+    { assetId = "rbxassetid://7300486042", tooltip = "Config System" },
+}
+
+local sidebarIconCount = #sidebarIconsData
+local sidebarButtons = {}
+local sidebarBgs = {}
+
+for i, data in ipairs(sidebarIconsData) do
+    local iconYScale = i / (sidebarIconCount + 1)
+    local iconSize = data.iconSize or 26
+    local bgSize = data.bgSize or iconSize
+
+    local iconBtn = Instance.new("ImageButton")
+    iconBtn.Size = UDim2.new(0, iconSize, 0, iconSize)
+    iconBtn.Position = UDim2.new(0.5, -(iconSize / 2), iconYScale, -(iconSize / 2))
+    iconBtn.BackgroundTransparency = 1
+    iconBtn.Image = data.assetId
+    iconBtn.ImageColor3 = COLORS.SidebarIcon
+    iconBtn.ImageTransparency = 0
+    iconBtn.ScaleType = Enum.ScaleType.Fit
+    iconBtn.ZIndex = 5
+    iconBtn.Parent = sidebar
+
+    local iconBg = Instance.new("Frame")
+    iconBg.Size = UDim2.new(0, bgSize, 0, bgSize)
+    iconBg.Position = UDim2.new(0.5, -(bgSize / 2), iconYScale, -(bgSize / 2))
+    iconBg.BackgroundColor3 = Color3.fromRGB(38, 14, 20)
+    iconBg.BorderSizePixel = 0
+    iconBg.BackgroundTransparency = 1
+    iconBg.ZIndex = 4
+    iconBg.Parent = sidebar
+
+    local bgCorner = Instance.new("UICorner")
+    bgCorner.CornerRadius = UDim.new(0, 0)
+    bgCorner.Parent = iconBg
+
+    iconBg.Visible = false
+    iconBg.BackgroundTransparency = 1
+
+    iconBtn.MouseEnter:Connect(function()
+        if not iconBtn:GetAttribute("ActiveTab") then
+            -- ховер без фона, чуть темнее чем раньше, не серый
+            tween(iconBtn, {ImageColor3 = Color3.fromRGB(165, 28, 47)}, 0.12)
+        end
+    end)
+    iconBtn.MouseLeave:Connect(function()
+        if not iconBtn:GetAttribute("ActiveTab") then
+            tween(iconBtn, {ImageColor3 = COLORS.SidebarIcon}, 0.12)
+        end
+    end)
+
+    sidebarButtons[i] = iconBtn
+    sidebarBgs[i] = iconBg
+end
+
+local sepLine = Instance.new("Frame")
+sepLine.Size = UDim2.new(0, 1, 1, -45)
+sepLine.Position = UDim2.new(0, 50, 0, 45)
+sepLine.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+sepLine.BorderSizePixel = 0
+sepLine.ZIndex = 3
+sepLine.Parent = mainFrame
+
+local contentArea = Instance.new("Frame")
+contentArea.Name = "ContentArea"
+contentArea.Size = UDim2.new(1, -60, 1, -53)
+contentArea.Position = UDim2.new(0, 55, 0, 49)
+contentArea.BackgroundTransparency = 1
+contentArea.ZIndex = 2
+contentArea.Parent = mainFrame
+
+-- Dragging & Toggle UI via DELETE
+local dragging = false
+local dragInput = nil
+local dragStart = nil
+local startPosition = nil
+
+dragButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPosition = mainFrame.Position
+
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+dragButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input == dragInput and dragStart and startPosition then
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPosition.X.Scale,
+            startPosition.X.Offset + delta.X,
+            startPosition.Y.Scale,
+            startPosition.Y.Offset + delta.Y
+        )
+    end
+end)
+
+local uiVisible = true
+UserInputService.InputBegan:Connect(function(input)
+    if input.KeyCode == Enum.KeyCode.Delete then
+        uiVisible = not uiVisible
+        mainFrame.Visible = uiVisible
+    end
+end)
+
+-- ==============================================================================
+-- UI BUILDER CLASS (CUSTOM WIDGETS & 5-TAB STRUCTURE)
+-- ==============================================================================
+
+local UI = { tabs = {} }
+local activePopup = nil
+local function showInfoPopup(text)
+    if activePopup then activePopup:Destroy() end
+    
+    local popupGui = Instance.new("ScreenGui")
+    popupGui.Name = "ArchnemPopup"
+    popupGui.Parent = playerGui
+    activePopup = popupGui
+
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(0, 220, 0, 50)
+    frame.Position = UDim2.new(0.5, -110, 0.5, -25)
+    frame.BackgroundColor3 = Color3.fromRGB(80, 10, 15) -- Темно-красный
+    frame.BorderSizePixel = 0
+    frame.Parent = popupGui
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = frame
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(120, 120, 120) -- Серый контур
+    stroke.Thickness = 1.5
+    stroke.Parent = frame
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -20, 1, 0)
+    label.Position = UDim2.new(0, 10, 0, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.FontFace = UI_FONT
+    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+    label.TextSize = 15
+    label.TextWrapped = true
+    label.ZIndex = 6
+    label.Parent = frame
+
+    local textBox = Instance.new("TextBox")
+    textBox.Size = UDim2.new(1, -20, 0, 28)
+    textBox.Position = UDim2.new(0, 10, 1, -34)
+    textBox.BackgroundColor3 = Color3.fromRGB(35, 10, 15)
+    textBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    textBox.FontFace = UI_FONT
+    textBox.TextSize = 15
+    textBox.PlaceholderText = "Введите цифры"
+    textBox.Text = ""
+    textBox.ZIndex = 7
+    textBox.Parent = frame
+    textBox:CaptureFocus()
+
+    local closeConn
+    closeConn = UserInputService.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local mousePos = UserInputService:GetMouseLocation()
+            local absPos = frame.AbsolutePosition
+            local absSize = frame.AbsoluteSize
+            local inside = mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y
+            if not inside then
+                popupGui:Destroy()
+                activePopup = nil
+                closeConn:Disconnect()
+            end
+        end
+    end)
+end
+
+
+function UI.switchTab(index)
+    for i, tab in ipairs(UI.tabs) do
+        tab.scrollFrame.Visible = (i == index)
+        local btn = sidebarButtons[i]
+        local bg = sidebarBgs[i]
+        if btn and bg then
+            -- полностью убираем фон как на фотке, оставляем только свечение иконки
+            bg.Visible = false
+            bg.BackgroundTransparency = 1
+            if i == index then
+                btn:SetAttribute("ActiveTab", true)
+                -- активная вкладка красная, светится
+                tween(btn, {ImageColor3 = Color3.fromRGB(235, 35, 60)}, 0.18)
+            else
+                btn:SetAttribute("ActiveTab", false)
+                tween(btn, {ImageColor3 = COLORS.SidebarIcon}, 0.18)
+            end
+        end
+    end
+end
+
+function UI.createTab(index, name)
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Name = "Tab_" .. name
+    scrollFrame.Size = UDim2.new(1, -6, 1, -4)
+    scrollFrame.Position = UDim2.new(0, 3, 0, 2)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.BorderSizePixel = 0
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+    scrollFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    scrollFrame.ScrollBarThickness = 0
+    scrollFrame.ScrollBarImageTransparency = 1
+    scrollFrame.ScrollingDirection = Enum.ScrollingDirection.Y
+    scrollFrame.ScrollBarImageColor3 = COLORS.Accent
+    scrollFrame.Visible = (index == 1)
+    scrollFrame.Parent = contentArea
+
+    local leftCol = Instance.new("ScrollingFrame")
+    leftCol.Name = "LeftCol"
+    leftCol.Size = UDim2.new(0.485, 0, 1, -8)
+    leftCol.Position = UDim2.new(0, 4, 0, 4)
+    leftCol.CanvasSize = UDim2.new(0, 0, 0, 0)
+    leftCol.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    leftCol.ScrollBarThickness = 0
+    leftCol.ScrollingDirection = Enum.ScrollingDirection.Y
+    leftCol.ScrollBarImageTransparency = 1
+    leftCol.ScrollBarImageColor3 = COLORS.Accent
+    leftCol.BackgroundTransparency = 1
+    leftCol.BorderSizePixel = 0
+    leftCol.ClipsDescendants = false
+    leftCol.Parent = scrollFrame
+
+    local leftLayout = Instance.new("UIListLayout")
+    leftLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    leftLayout.Padding = UDim.new(0, 14)
+    leftLayout.Parent = leftCol
+
+    local rightCol = Instance.new("ScrollingFrame")
+    rightCol.Name = "RightCol"
+    rightCol.Size = UDim2.new(0.46, 0, 1, -8)
+    rightCol.Position = UDim2.new(0.54, 0, 0, 4)
+    rightCol.CanvasSize = UDim2.new(0, 0, 0, 0)
+    rightCol.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    rightCol.ScrollBarThickness = 0
+    rightCol.ScrollingDirection = Enum.ScrollingDirection.Y
+    rightCol.ScrollBarImageTransparency = 1
+    rightCol.ScrollBarImageColor3 = COLORS.Accent
+    rightCol.BackgroundTransparency = 1
+    rightCol.BorderSizePixel = 0
+    rightCol.ClipsDescendants = false
+    rightCol.Parent = scrollFrame
+
+    local rightLayout = Instance.new("UIListLayout")
+    rightLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    rightLayout.Padding = UDim.new(0, 14)
+    rightLayout.Parent = rightCol
+
+    local pad = Instance.new("UIPadding")
+    pad.PaddingRight = UDim.new(0, 8)
+    pad.PaddingBottom = UDim.new(0, 12)
+    pad.Parent = scrollFrame
+
+    local tabObj = { index = index, name = name, scrollFrame = scrollFrame, leftCol = leftCol, rightCol = rightCol, nextCol = "left" }
+    table.insert(UI.tabs, tabObj)
+
+    if sidebarButtons[index] then
+        sidebarButtons[index].MouseButton1Click:Connect(function()
+            UI.switchTab(index)
+        end)
+    end
+
+    return tabObj
+end
+
+function UI.createSection(tab, titleText, side)
+    local parentCol = (side == "right" or (side == nil and tab.nextCol == "right")) and tab.rightCol or tab.leftCol
+    tab.nextCol = (parentCol == tab.leftCol) and "right" or "left"
+
+    local sectionOuter = Instance.new("Frame")
+    sectionOuter.ClipsDescendants = false
+    sectionOuter.Name = "Section_" .. titleText
+    sectionOuter.Size = UDim2.new(1, 0, 0, 0)
+    sectionOuter.AutomaticSize = Enum.AutomaticSize.Y
+    sectionOuter.BackgroundTransparency = 1
+    sectionOuter.Parent = parentCol
+
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "Title"
+    titleLabel.Size = UDim2.new(1, -4, 0, 18)
+    titleLabel.Position = UDim2.new(0, 6, 0, 4)
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Text = string.gsub(titleText, "^%l", string.upper)
+    titleLabel.FontFace = UI_FONT
+    titleLabel.TextSize = 13
+    titleLabel.TextColor3 = COLORS.AccentGlow
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.Parent = sectionOuter
+
+    local titleStroke = Instance.new("UIStroke")
+    titleStroke.Color = Color3.fromRGB(0, 0, 0)
+    titleStroke.Thickness = 1.2
+    titleStroke.Transparency = 0
+    titleStroke.Parent = titleLabel
+
+    local titleLine = Instance.new("Frame")
+    titleLine.Name = "TitleUnderline"
+    titleLine.Size = UDim2.new(0, 0, 0, 2)
+    titleLine.Position = UDim2.new(0, 6, 0, 23)
+    titleLine.BackgroundColor3 = COLORS.AccentGlow
+    titleLine.BorderSizePixel = 0
+    titleLine.ZIndex = 5
+    titleLine.Parent = sectionOuter
+
+    local lineCorner = Instance.new("UICorner")
+    lineCorner.CornerRadius = UDim.new(0, 1)
+    lineCorner.Parent = titleLine
+
+    local cardBox = Instance.new("Frame")
+    cardBox.ClipsDescendants = false
+    cardBox.Name = "CardBox"
+    cardBox.Size = UDim2.new(1, 0, 0, 0)
+    cardBox.Position = UDim2.new(0, 0, 0, 29)
+    cardBox.AutomaticSize = Enum.AutomaticSize.Y
+    -- возвращаем как было изначально: прозрачный до ховера, при ховере темный серый но чуть темнее оригинала 18,18,22
+    cardBox.BackgroundColor3 = COLORS.PanelBg
+    cardBox.BorderSizePixel = 0
+    cardBox.BackgroundTransparency = 1
+    cardBox.Parent = sectionOuter
+
+    local cardCorner = Instance.new("UICorner")
+    cardCorner.CornerRadius = UDim.new(0, 6)
+    cardCorner.Parent = cardBox
+
+    -- черная обводка при ховере, видно но не сильно
+    local cardStroke = Instance.new("UIStroke")
+    cardStroke.Color = Color3.fromRGB(0, 0, 0)
+    cardStroke.Thickness = 2.2
+    cardStroke.Transparency = 1
+    cardStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    cardStroke.Parent = cardBox
+
+    local function onEnter()
+        local targetWidth = math.max(titleLabel.TextBounds.X, 25)
+        tween(titleLine, {Size = UDim2.new(0, targetWidth, 0, 2)}, 0.25, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+        -- цвет вкладок как при наводке, чуть темнее оригинала (было 18,18,22 -> стало 13,13,15)
+        tween(cardBox, {BackgroundTransparency = 0, BackgroundColor3 = Color3.fromRGB(10, 10, 11)}, 0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        tween(titleLabel, {TextColor3 = Color3.fromRGB(255, 255, 255)}, 0.18)
+        -- черная обводка пожирнее
+        tween(cardStroke, {Transparency = 0.5, Thickness = 2.6}, 0.18, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    end
+
+    local function onLeave()
+        tween(titleLine, {Size = UDim2.new(0, 0, 0, 2)}, 0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        tween(cardBox, {BackgroundTransparency = 1}, 0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        tween(titleLabel, {TextColor3 = COLORS.AccentGlow}, 0.18)
+        tween(cardStroke, {Transparency = 1}, 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    end
+
+    cardBox.Active = true
+    cardBox.MouseEnter:Connect(onEnter)
+    cardBox.MouseLeave:Connect(onLeave)
+    titleLabel.Active = true
+    titleLabel.MouseEnter:Connect(onEnter)
+    titleLabel.MouseLeave:Connect(onLeave)
+
+    local container = Instance.new("Frame")
+    container.ClipsDescendants = false
+    container.Name = "Container"
+    container.Size = UDim2.new(1, -12, 0, 0)
+    container.Position = UDim2.new(0, 6, 0, 6)
+    container.AutomaticSize = Enum.AutomaticSize.Y
+    container.BackgroundTransparency = 1
+    container.Parent = cardBox
+
+    local layout = Instance.new("UIListLayout")
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Padding = UDim.new(0, 8)
+    layout.Parent = container
+
+    local pad = Instance.new("UIPadding")
+    pad.PaddingTop = UDim.new(0, 4)
+    pad.PaddingBottom = UDim.new(0, 12)
+    pad.Parent = container
+
+    return container
+end
+function UI.addToggle(container, labelText, defaultVal, callback)
+    local state = defaultVal or false
+
+    local row = Instance.new("Frame")
+    row.Name = "Toggle_" .. labelText
+    row.Size = UDim2.new(1, 0, 0, 26)
+    row.BackgroundTransparency = 1
+    row.Parent = container
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -30, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.FontFace = UI_FONT
+    label.TextSize = 11
+    label.TextColor3 = COLORS.TextPrimary
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local labelStroke = Instance.new("UIStroke")
+    labelStroke.Color = Color3.fromRGB(0, 0, 0)
+    labelStroke.Thickness = 1.0
+    labelStroke.Transparency = 0
+    labelStroke.Parent = label
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 13, 0, 13)
+    btn.Position = UDim2.new(0, 2, 0.5, -6.5)
+    btn.BackgroundColor3 = state and COLORS.AccentDark or COLORS.CheckboxBg
+    btn.Text = ""
+    btn.FontFace = UI_FONT
+    btn.TextSize = 10
+    btn.TextColor3 = COLORS.AccentGlow
+    btn.ClipsDescendants = true
+    btn.Parent = row
+    label.Position = UDim2.new(0, 21, 0, 0)
+    label.Size = UDim2.new(1, -21, 1, 0)
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 3)
+    corner.Parent = btn
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(110, 110, 115) -- серая, почти незаметная
+    stroke.Thickness = 1
+    stroke.Transparency = state and 0.65 or 1
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = btn
+
+    -- легкий но заметный градиент для чекбокса
+    local checkGradient = Instance.new("UIGradient")
+    checkGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.0, Color3.fromRGB(235, 35, 60)), ColorSequenceKeypoint.new(1.0, Color3.fromRGB(0, 0, 0))}
+    checkGradient.Rotation = -90
+    checkGradient.Enabled = state
+    checkGradient.Parent = btn
+
+    local function updateVisuals()
+        btn.Text = "" -- checkbox style
+        if state then
+            -- включено: плавная анимация + светло серая обводка только у включенных
+            tween(btn, {BackgroundColor3 = Color3.fromRGB(95, 14, 28), Size = UDim2.new(0, 15, 0, 15), Position = UDim2.new(0, 1, 0.5, -7.5)}, 0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            tween(stroke, {Color = Color3.fromRGB(110, 110, 115), Thickness = 1, Transparency = 0.68}, 0.28, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        else
+            -- выключено: плавное уменьшение, обводка исчезает
+            tween(btn, {BackgroundColor3 = COLORS.CheckboxBg, Size = UDim2.new(0, 13, 0, 13), Position = UDim2.new(0, 2, 0.5, -6.5)}, 0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            tween(stroke, {Transparency = 1, Thickness = 1}, 0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        end
+        checkGradient.Enabled = state
+    end
+
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        updateVisuals()
+        if callback then callback(state) end
+    end)
+
+    row.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            state = not state
+            updateVisuals()
+            if callback then callback(state) end
+        end
+    end)
+
+    return {
+        setState = function(newVal)
+            state = newVal
+            updateVisuals()
+        end,
+        getState = function() return state end
+    }
+end
+
+function UI.addSlider(container, labelText, minVal, maxVal, defaultVal, isFloat, callback)
+    local val = defaultVal or minVal
+    val = math.clamp(val, minVal, maxVal)
+
+    local row = Instance.new("Frame")
+    row.Name = "Slider_" .. labelText
+    row.Size = UDim2.new(1, 0, 0, 38)
+    row.BackgroundTransparency = 1
+    row.Parent = container
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.65, 0, 0, 20)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.FontFace = UI_FONT
+    label.TextSize = 11
+    label.TextColor3 = COLORS.TextPrimary
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local labelStroke = Instance.new("UIStroke")
+    labelStroke.Color = Color3.fromRGB(0, 0, 0)
+    labelStroke.Thickness = 1.0
+    labelStroke.Transparency = 0
+    labelStroke.Parent = label
+
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Size = UDim2.new(0.35, 0, 0, 20)
+    valueLabel.Position = UDim2.new(0.65, 0, 0, 0)
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Text = isFloat and string.format("%.1f", val) or string.format("%.1f", val)
+    valueLabel.FontFace = UI_FONT
+    valueLabel.TextSize = 11
+    valueLabel.TextColor3 = COLORS.TextPrimary
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Right
+    valueLabel.Parent = row
+
+    local valueStroke = Instance.new("UIStroke")
+    valueStroke.Color = Color3.fromRGB(0, 0, 0)
+    valueStroke.Thickness = 1.0
+    valueStroke.Transparency = 0
+    valueStroke.Parent = valueLabel
+
+    local track = Instance.new("Frame")
+    track.Size = UDim2.new(1, 0, 0, 6)
+    track.Position = UDim2.new(0, 0, 0, 26)
+    track.BackgroundColor3 = COLORS.CheckboxBg
+    track.ClipsDescendants = false
+    track.Parent = row
+
+    local trackCorner = Instance.new("UICorner")
+    trackCorner.CornerRadius = UDim.new(0, 0)
+    trackCorner.Parent = track
+
+    local fill = Instance.new("Frame")
+    fill.Size = UDim2.new((val - minVal) / (maxVal - minVal), 0, 1, 0)
+    fill.BackgroundColor3 = COLORS.Accent
+    fill.ClipsDescendants = true
+    fill.Parent = track
+
+    -- красивый градиент: светлый в начале -> темнее в конце
+    local fillGradient = Instance.new("UIGradient")
+    fillGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.0, Color3.fromRGB(160, 20, 30)), ColorSequenceKeypoint.new(1.0, Color3.fromRGB(0, 0, 0))}
+    fillGradient.Rotation = 0
+    fillGradient.Parent = fill
+
+    local fillCorner = Instance.new("UICorner")
+    fillCorner.CornerRadius = UDim.new(0, 0)
+    fillCorner.Parent = fill
+
+    local thumb = Instance.new("Frame")
+    thumb.Size = UDim2.new(0, 4, 0, 14)
+    thumb.AnchorPoint = Vector2.new(0.5, 0.5)
+    thumb.Position = UDim2.new((val - minVal) / (maxVal - minVal), 0, 0.5, 0)
+    thumb.BackgroundColor3 = COLORS.TextPrimary
+    thumb.ZIndex = 3
+    thumb.Parent = track
+
+    local thumbCorner = Instance.new("UICorner")
+    thumbCorner.CornerRadius = UDim.new(0, 0)
+    thumbCorner.Parent = thumb
+
+    local draggingSlider = false
+
+    local function updateValue(inputPos)
+        local percent = math.clamp((inputPos.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+        val = minVal + percent * (maxVal - minVal)
+        if not isFloat then val = math.floor(val + 0.5) end
+        fill.Size = UDim2.new(percent, 0, 1, 0)
+        thumb.Position = UDim2.new(percent, 0, 0.5, 0)
+        valueLabel.Text = isFloat and string.format("%.2f", val) or tostring(val)
+        if callback then callback(val) end
+    end
+
+    track.InputBegan:Connect(function(input)
+        if inputActive then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            local mousePos = UserInputService:GetMouseLocation()
+            local valueAbsPos = valueLabel.AbsolutePosition
+            local valueAbsSize = valueLabel.AbsoluteSize
+            -- Ignore clicks over value label area so typing isn't interrupted
+            local overValue = mousePos.X >= valueAbsPos.X and mousePos.X <= valueAbsPos.X + valueAbsSize.X and mousePos.Y >= valueAbsPos.Y and mousePos.Y <= valueAbsPos.Y + valueAbsSize.Y
+            if overValue then return end
+            draggingSlider = true
+            updateValue(input.Position)
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    draggingSlider = false
+                end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if inputActive or not draggingSlider then return end
+        if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            updateValue(input.Position)
+        end
+    end)
+
+    local inputActive = false
+
+    valueLabel.Active = true
+    valueLabel.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton2 then
+            inputActive = true
+            -- Replace label with inline input box temporarily
+            local inputBox = Instance.new("TextBox")
+            inputBox.Name = "ValueInput"
+            inputBox.Size = UDim2.new(0.35, 0, 0, 20)
+            inputBox.Position = UDim2.new(0.65, 0, 0, 0)
+            inputBox.BackgroundTransparency = 1
+            inputBox.Text = tostring(val)
+            inputBox.FontFace = UI_FONT
+            inputBox.TextSize = 11
+            inputBox.TextColor3 = COLORS.TextPrimary
+            inputBox.TextXAlignment = Enum.TextXAlignment.Right
+            inputBox.ZIndex = 10
+            inputBox.Parent = row
+            valueLabel.Visible = false
+            inputBox:CaptureFocus()
+
+            local apply = function()
+                inputActive = false
+                local text = inputBox.Text
+                local number = tonumber(text)
+                if number then
+                    val = math.clamp(number, minVal, maxVal)
+                    local percent = (val - minVal) / (maxVal - minVal)
+                    fill.Size = UDim2.new(percent, 0, 1, 0)
+                    thumb.Position = UDim2.new(percent, 0, 0.5, 0)
+                    valueLabel.Text = isFloat and string.format("%.2f", val) or tostring(val)
+                    if callback then callback(val) end
+                end
+                valueLabel.Visible = true
+                inputBox:Destroy()
+            end
+
+            -- Only apply when clicking outside (not on FocusLost to avoid LMB reset)
+            UserInputService.InputBegan:Connect(function(inp)
+                if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+                    local mousePos = UserInputService:GetMouseLocation()
+                    local absPos = inputBox.AbsolutePosition
+                    local absSize = inputBox.AbsoluteSize
+                    local inside = mousePos.X >= absPos.X and mousePos.X <= absPos.X + absSize.X and mousePos.Y >= absPos.Y and mousePos.Y <= absPos.Y + absSize.Y
+                    if not inside then
+                        apply()
+                    end
+                end
+            end)
+        end
+    end)
+
+    return {
+        setValue = function(newVal)
+            val = math.clamp(newVal, minVal, maxVal)
+            local percent = (val - minVal) / (maxVal - minVal)
+            fill.Size = UDim2.new(percent, 0, 1, 0)
+            thumb.Position = UDim2.new(percent, 0, 0.5, 0)
+            valueLabel.Text = isFloat and string.format("%.2f", val) or tostring(val)
+        end,
+        getValue = function() return val end
+    }
+end
+
+function UI.addDropdown(container, labelText, options, defaultVal, callback)
+    local selected = defaultVal or options[1] or "Default"
+    local isOpen = false
+    local dropdownWidth = 110
+
+    local function measureTextWidth(text, textSize)
+        local ok, result = pcall(function()
+            return TextService:GetTextSize(tostring(text), textSize, Enum.Font.Code, Vector2.new(1000, 1000))
+        end)
+        if ok and result then
+            return result.X
+        end
+        return #tostring(text) * (textSize * 0.62)
+    end
+
+    local function recalcWidth()
+        local largest = measureTextWidth(selected, 10)
+        for _, opt in ipairs(options) do
+            largest = math.max(largest, measureTextWidth(opt, 10))
+        end
+        dropdownWidth = math.max(74, math.ceil(largest + 20))
+    end
+
+    local row = Instance.new("Frame")
+    row.Name = "Dropdown_" .. labelText
+    row.Size = UDim2.new(1, 0, 0, 20)
+    row.BackgroundTransparency = 1
+    row.ClipsDescendants = false
+    row.ZIndex = 50
+    row.Parent = container
+
+    local header = Instance.new("Frame")
+    header.Size = UDim2.new(1, 0, 0, 18)
+    header.BackgroundTransparency = 1
+    header.ClipsDescendants = false
+    header.Parent = row
+
+    local label = Instance.new("TextLabel")
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.FontFace = UI_FONT
+    label.TextSize = 11
+    label.TextColor3 = COLORS.TextPrimary
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = header
+
+    local labelStroke = Instance.new("UIStroke")
+    labelStroke.Color = Color3.fromRGB(0, 0, 0)
+    labelStroke.Thickness = 1.0
+    labelStroke.Transparency = 0
+    labelStroke.Parent = label
+
+    local btn = Instance.new("TextButton")
+    btn.AnchorPoint = Vector2.new(1, 0.5)
+    btn.Size = UDim2.new(0, dropdownWidth, 0, 16)
+    btn.Position = UDim2.new(1, -2, 0.5, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(26, 16, 20)
+    btn.Text = ""
+    btn.AutoButtonColor = false
+    btn.ClipsDescendants = true
+    btn.ZIndex = 51
+    btn.Parent = header
+    local btnGradient = Instance.new("UIGradient")
+    btnGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.0, Color3.fromRGB(190, 25, 35)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(0, 0, 0)), ColorSequenceKeypoint.new(1.0, Color3.fromRGB(0, 0, 0))}
+    btnGradient.Rotation = 90
+    btnGradient.Parent = btn
+
+
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Color = Color3.fromRGB(0, 0, 0)
+    btnStroke.Thickness = 1.2
+    btnStroke.Transparency = 0
+    btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    btnStroke.Parent = btn
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 0)
+    corner.Parent = btn
+
+    local valueLabel = Instance.new("TextLabel")
+    valueLabel.Name = "Value"
+    valueLabel.BackgroundTransparency = 1
+    valueLabel.Size = UDim2.new(1, -16, 1, 0)
+    valueLabel.Position = UDim2.new(0, 4, 0, 0)
+    valueLabel.Text = tostring(selected)
+    valueLabel.FontFace = UI_FONT
+    valueLabel.TextSize = 10
+    valueLabel.TextColor3 = COLORS.AccentGlow
+    valueLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    valueLabel.TextStrokeTransparency = 0
+    valueLabel.TextXAlignment = Enum.TextXAlignment.Center
+    valueLabel.TextTruncate = Enum.TextTruncate.AtEnd
+    valueLabel.ZIndex = 52
+    valueLabel.Parent = btn
+
+    local arrowLabel = Instance.new("TextLabel")
+    arrowLabel.Name = "Arrow"
+    arrowLabel.AnchorPoint = Vector2.new(1, 0.5)
+    arrowLabel.Size = UDim2.new(0, 10, 0, 16)
+    arrowLabel.Position = UDim2.new(1, -4, 0.5, 0)
+    arrowLabel.BackgroundTransparency = 1
+    arrowLabel.Text = "∨"
+    arrowLabel.FontFace = UI_FONT
+    arrowLabel.TextSize = 10
+    arrowLabel.TextColor3 = Color3.fromRGB(155, 155, 160)
+    arrowLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    arrowLabel.TextStrokeTransparency = 0
+    arrowLabel.TextXAlignment = Enum.TextXAlignment.Right
+    arrowLabel.ZIndex = 53
+    arrowLabel.Parent = btn
+
+    local listFrame = Instance.new("Frame")
+    listFrame.Name = "OptionList"
+    listFrame.Size = UDim2.new(0, dropdownWidth, 0, 0)
+    listFrame.Position = UDim2.new(1, -2 - dropdownWidth, 0, 20)
+    listFrame.AutomaticSize = Enum.AutomaticSize.Y
+    listFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    listFrame.BackgroundTransparency = 0
+    listFrame.BorderSizePixel = 0
+    listFrame.ClipsDescendants = true
+    listFrame.Visible = false
+    listFrame.ZIndex = 10000
+    -- ВАЖНО: ScrollingFrame всегда обрезает содержимое (ClipsDescendants на нём не работает),
+    -- поэтому список рисуем поверх всего интерфейса, а не внутри строки.
+    listFrame.Parent = screenGui
+
+    local listCorner = Instance.new("UICorner")
+    listCorner.CornerRadius = UDim.new(0, 0)
+    listCorner.Parent = listFrame
+
+    local listStroke = Instance.new("UIStroke")
+    listStroke.Color = Color3.fromRGB(0, 0, 0)
+    listStroke.Thickness = 1.2
+    listStroke.Transparency = 0
+    listStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    listStroke.Parent = listFrame
+
+    local listGradient = Instance.new("UIGradient")
+    listGradient.Color = ColorSequence.new{ColorSequenceKeypoint.new(0.0, Color3.fromRGB(160, 20, 30)), ColorSequenceKeypoint.new(1.0, Color3.fromRGB(0, 0, 0))}
+    listGradient.Rotation = 90
+    listGradient.Parent = listFrame
+
+    local listLayout = Instance.new("UIListLayout")
+    listLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    listLayout.Padding = UDim.new(0, 0)
+    listLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    listLayout.Parent = listFrame
+
+    local function anchorList()
+        local okPos = pcall(function()
+            local ap, az = btn.AbsolutePosition, btn.AbsoluteSize
+            local gy = 0
+            pcall(function()
+                if not screenGui.IgnoreGuiInset then
+                    gy = game:GetService("GuiService"):GetGuiInset().Y
+                end
+            end)
+            local x = ap.X + az.X - dropdownWidth
+            local y = ap.Y + az.Y + 2
+            -- если снизу нет места — раскрываем вверх
+            local listH = listFrame.AbsoluteSize.Y
+            local screenH = screenGui.AbsoluteSize.Y
+            if listH > 0 and (y + listH) > screenH then
+                y = ap.Y - listH - 2
+            end
+            listFrame.Position = UDim2.fromOffset(x, y - gy)
+        end)
+        return okPos
+    end
+
+    local function refreshLayout()
+        recalcWidth()
+        label.Size = UDim2.new(1, -(dropdownWidth + 8), 1, 0)
+        btn.Size = UDim2.new(0, dropdownWidth, 0, 16)
+        btn.Position = UDim2.new(1, -2, 0.5, 0)
+        valueLabel.Size = UDim2.new(1, -18, 1, 0)
+        valueLabel.Position = UDim2.new(0, 2, 0, 0)
+        arrowLabel.Position = UDim2.new(1, -4, 0.5, 0)
+        listFrame.Size = UDim2.new(0, dropdownWidth, 0, 0)
+        anchorList()
+    end
+
+    local function populateOptions()
+        refreshLayout()
+        for _, child in ipairs(listFrame:GetChildren()) do
+            if child:IsA("TextButton") then
+                child:Destroy()
+            end
+        end
+
+        for _, opt in ipairs(options) do
+            local isSelected = (opt == selected)
+            local optBtn = Instance.new("TextButton")
+            optBtn.Size = UDim2.new(1, 0, 0, 18)
+            optBtn.BackgroundTransparency = isSelected and 0.82 or 1
+            optBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+            optBtn.Text = tostring(opt)
+            optBtn.FontFace = UI_FONT
+            optBtn.TextSize = 10
+            optBtn.TextColor3 = COLORS.AccentGlow
+            optBtn.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+            optBtn.TextStrokeTransparency = 0
+            optBtn.TextXAlignment = Enum.TextXAlignment.Center
+            optBtn.AutoButtonColor = false
+            optBtn.ClipsDescendants = true
+            optBtn.ZIndex = 102
+            optBtn.Parent = listFrame
+
+            local optCorner = Instance.new("UICorner")
+            optCorner.CornerRadius = UDim.new(0, 0)
+            optCorner.Parent = optBtn
+
+            optBtn.MouseEnter:Connect(function()
+                if not isSelected then
+                    tween(optBtn, {BackgroundTransparency = 0.9, TextColor3 = Color3.fromRGB(235, 55, 80)}, 0.12)
+                end
+            end)
+
+            optBtn.MouseLeave:Connect(function()
+                if not isSelected then
+                    tween(optBtn, {BackgroundTransparency = 1, TextColor3 = COLORS.AccentGlow}, 0.12)
+                end
+            end)
+
+            optBtn.MouseButton1Click:Connect(function()
+                selected = opt
+                valueLabel.Text = tostring(selected)
+                isOpen = false
+                arrowLabel.Text = "∨"
+                listFrame.Visible = false
+                row.ZIndex = 50
+                populateOptions()
+                if callback then
+                    callback(selected)
+                end
+            end)
+        end
+    end
+
+    refreshLayout()
+    populateOptions()
+
+    -- список висит поверх UI -> держим его приклеенным к кнопке
+    pcall(function()
+        btn:GetPropertyChangedSignal("AbsolutePosition"):Connect(function()
+            if isOpen then anchorList() end
+        end)
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        isOpen = not isOpen
+        if isOpen then
+            -- закрываем все остальные открытые списки
+            for _, other in ipairs(screenGui:GetChildren()) do
+                if other:IsA("Frame") and other.Name == "OptionList" and other ~= listFrame then
+                    other.Visible = false
+                end
+            end
+            listFrame.Visible = true
+            anchorList()
+            task.defer(anchorList)
+            row.ZIndex = 100
+            listFrame.ZIndex = 10000
+            arrowLabel.Text = "∧"
+        else
+            listFrame.Visible = false
+            row.ZIndex = 50
+            arrowLabel.Text = "∨"
+        end
+    end)
+
+    -- список скрывается вместе со своей вкладкой / меню
+    pcall(function()
+        row:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+            if isOpen then anchorList() end
+        end)
+        container:GetPropertyChangedSignal("Visible"):Connect(function()
+            if not container.Visible then isOpen = false; listFrame.Visible = false end
+        end)
+    end)
+
+    return {
+        setValue = function(newVal)
+            selected = newVal
+            valueLabel.Text = tostring(selected)
+            arrowLabel.Text = isOpen and "∧" or "∨"
+            populateOptions()
+        end,
+        getValue = function()
+            return selected
+        end,
+        refreshOptions = function(newOpts)
+            options = newOpts
+            selected = options[1] or "None"
+            valueLabel.Text = tostring(selected)
+            arrowLabel.Text = "∨"
+            populateOptions()
+        end
+    }
+end
+
+
+
+
+function UI.addKeybind(container, labelText, defaultKey, callback)
+    local currentKey = defaultKey or Enum.KeyCode.C
+    local listening = false
+
+    local function getKeybindDisplayName(key)
+        local name = key and key.Name or "C"
+        local short = {
+            LeftShift = "LS",
+            RightShift = "RS",
+            LeftControl = "LC",
+            RightControl = "RC",
+            LeftAlt = "LA",
+            RightAlt = "RA",
+            Backspace = "BS",
+            Return = "ENT",
+            Escape = "ESC",
+            Space = "SPC",
+            CapsLock = "CAP",
+            Tab = "TAB",
+            Delete = "DEL",
+            Insert = "INS",
+            PageUp = "PGU",
+            PageDown = "PGD",
+            Up = "UP",
+            Down = "DN",
+            Left = "LT",
+            Right = "RT",
+        }
+        return short[name] or name
+    end
+
+    local row = Instance.new("Frame")
+    row.Name = "Keybind_" .. labelText
+    row.Size = UDim2.new(1, 0, 0, 24)
+    row.BackgroundTransparency = 1
+    row.Parent = container
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, -34, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.FontFace = UI_FONT
+    label.TextSize = 11
+    label.TextColor3 = COLORS.TextPrimary
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local labelStroke = Instance.new("UIStroke")
+    labelStroke.Color = Color3.fromRGB(0, 0, 0)
+    labelStroke.Thickness = 1.0
+    labelStroke.Transparency = 0
+    labelStroke.Parent = label
+
+    local btn = Instance.new("TextButton")
+    btn.AnchorPoint = Vector2.new(1, 0.5)
+    btn.Size = UDim2.new(0, 16, 0, 13)
+    btn.AutomaticSize = Enum.AutomaticSize.X
+    btn.Position = UDim2.new(1, -2, 0.5, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(38, 18, 24)
+    btn.Text = getKeybindDisplayName(currentKey)
+    btn.FontFace = UI_FONT
+    btn.TextSize = 8
+    btn.TextColor3 = COLORS.TextPrimary
+    btn.AutoButtonColor = false
+    btn.ClipsDescendants = true
+    btn.Parent = row
+
+    local btnPadding = Instance.new("UIPadding")
+    btnPadding.PaddingLeft = UDim.new(0, 4)
+    btnPadding.PaddingRight = UDim.new(0, 4)
+    btnPadding.Parent = btn
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 0)
+    corner.Parent = btn
+
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Color = Color3.fromRGB(0, 0, 0)
+    btnStroke.Thickness = 1.0
+    btnStroke.Transparency = 0
+    btnStroke.Parent = btn
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(120, 120, 126)
+    stroke.Thickness = 1
+    stroke.Transparency = 0.76
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    stroke.Parent = btn
+
+    local function setButtonVisual(active)
+        if active then
+            tween(btn, {BackgroundColor3 = Color3.fromRGB(95, 14, 28)}, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            tween(stroke, {Transparency = 0.44}, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            btn.TextColor3 = COLORS.AccentGlow
+        else
+            tween(btn, {BackgroundColor3 = Color3.fromRGB(38, 18, 24)}, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            tween(stroke, {Transparency = 0.76}, 0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            btn.TextColor3 = COLORS.TextPrimary
+        end
+    end
+
+    btn.MouseEnter:Connect(function()
+        if listening then return end
+        tween(btn, {BackgroundColor3 = Color3.fromRGB(46, 22, 29)}, 0.12)
+        tween(stroke, {Transparency = 0.6}, 0.12)
+    end)
+
+    btn.MouseLeave:Connect(function()
+        if listening then return end
+        setButtonVisual(false)
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        if listening then return end
+        listening = true
+        btn.Text = "..."
+        setButtonVisual(true)
+
+        local conn
+        conn = UserInputService.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                currentKey = input.KeyCode
+                listening = false
+                btn.Text = getKeybindDisplayName(currentKey)
+                setButtonVisual(false)
+                conn:Disconnect()
+                if callback then callback(currentKey) end
+            end
+        end)
+    end)
+
+    return {
+        getKey = function() return currentKey end
+    }
+end
+
+function UI.addButton(container, buttonText, callback)
+    local row = Instance.new("Frame")
+    row.Name = "Button_" .. buttonText
+    row.Size = UDim2.new(1, 0, 0, 28)
+    row.BackgroundTransparency = 1
+    row.Parent = container
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, 0, 1, 0)
+    btn.BackgroundColor3 = COLORS.ButtonBg
+    btn.Text = buttonText
+    btn.FontFace = UI_FONT
+    btn.TextSize = 11
+    btn.TextColor3 = COLORS.TextPrimary
+    btn.Parent = row
+
+    local btnStroke = Instance.new("UIStroke")
+    btnStroke.Color = Color3.fromRGB(0, 0, 0)
+    btnStroke.Thickness = 1.0
+    btnStroke.Transparency = 0
+    btnStroke.Parent = btn
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 0)
+    corner.Parent = btn
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = COLORS.PanelBorder
+    stroke.Thickness = 1
+    stroke.Parent = btn
+
+    btn.MouseEnter:Connect(function()
+        tween(btn, {BackgroundColor3 = COLORS.ButtonHover, TextColor3 = COLORS.AccentGlow}, 0.15)
+    end)
+    btn.MouseLeave:Connect(function()
+        tween(btn, {BackgroundColor3 = COLORS.ButtonBg, TextColor3 = COLORS.TextPrimary}, 0.15)
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        if callback then callback() end
+    end)
+
+    return btn
+end
+
+function UI.addTextBox(container, placeholderText, callback)
+    local row = Instance.new("Frame")
+    row.Name = "TextBox_" .. placeholderText
+    row.Size = UDim2.new(1, 0, 0, 26)
+    row.BackgroundTransparency = 1
+    row.Parent = container
+
+    local box = Instance.new("TextBox")
+    box.Size = UDim2.new(1, 0, 1, 0)
+    box.BackgroundColor3 = COLORS.DropdownBg
+    box.PlaceholderText = placeholderText
+    box.Text = ""
+    box.FontFace = UI_FONT
+    box.TextSize = 11
+    box.TextColor3 = COLORS.TextPrimary
+    box.PlaceholderColor3 = COLORS.TextMuted
+    box.ClearTextOnFocus = false
+    box.Parent = row
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 0)
+    corner.Parent = box
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = COLORS.DropdownBorder
+    stroke.Thickness = 1
+    stroke.Parent = box
+
+    box.FocusLost:Connect(function(enterPressed)
+        if callback then callback(box.Text) end
+    end)
+
+    return box
+end
+
+function UI.addColorPicker(container, labelText, defaultColor, callback)
+    local presets = {
+        {"Red (Default)", Color3.fromRGB(141, 19, 38)},
+        {"Crimson",       Color3.fromRGB(220, 20, 60)},
+        {"Purple",        Color3.fromRGB(138, 43, 226)},
+        {"Blue",          Color3.fromRGB(30, 144, 255)},
+        {"Green",         Color3.fromRGB(46, 139, 87)},
+        {"Gold",          Color3.fromRGB(255, 215, 0)},
+        {"Monochrome",    Color3.fromRGB(180, 180, 180)}
+    }
+    local idx = 1
+
+    local row = Instance.new("Frame")
+    row.Name = "ColorPicker_" .. labelText
+    row.Size = UDim2.new(1, 0, 0, 26)
+    row.BackgroundTransparency = 1
+    row.Parent = container
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0.6, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = labelText
+    label.FontFace = UI_FONT
+    label.TextSize = 11
+    label.TextColor3 = COLORS.TextPrimary
+    label.TextXAlignment = Enum.TextXAlignment.Left
+    label.Parent = row
+
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.38, 0, 1, 0)
+    btn.Position = UDim2.new(0.62, 0, 0, 0)
+    btn.BackgroundColor3 = presets[idx][2]
+    btn.Text = presets[idx][1]
+    btn.FontFace = UI_FONT
+    btn.TextSize = 10
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Parent = row
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 0)
+    corner.Parent = btn
+
+    btn.MouseButton1Click:Connect(function()
+        idx = (idx % #presets) + 1
+        btn.BackgroundColor3 = presets[idx][2]
+        btn.Text = presets[idx][1]
+        if callback then callback(presets[idx][2]) end
+    end)
+
+    return btn
+end
+
+local headlessHeartbeat = nil
+local originalTerrainColors = {}
+local function applyHeadlessLocal(character, headlessAll)
+	if not character then return end
+	local head = character:FindFirstChild("Head")
+	if head then
+		head.LocalTransparencyModifier = 1
+		local face = head:FindFirstChildOfClass("Decal")
+		if face then face.Transparency = 1 end
+	end
+	if headlessAll then
+		for _, accessory in ipairs(character:GetChildren()) do
+			if accessory:IsA("Accessory") then
+				local handle = accessory:FindFirstChild("Handle")
+				if handle then handle.LocalTransparencyModifier = 1 end
+			end
+		end
+	end
+end
+
+local function removeHeadlessLocal(character, restoreAccessories)
+	if not character then return end
+	local head = character:FindFirstChild("Head")
+	if head then
+		head.LocalTransparencyModifier = 0
+		local face = head:FindFirstChildOfClass("Decal")
+		if face then face.Transparency = 0 end
+	end
+	if restoreAccessories then
+		for _, accessory in ipairs(character:GetChildren()) do
+			if accessory:IsA("Accessory") then
+				local handle = accessory:FindFirstChild("Handle")
+				if handle then handle.LocalTransparencyModifier = 0 end
+			end
+		end
+	end
+end
+
+local function startHeadlessHeartbeat()
+	stopHeadlessHeartbeat()
+	headlessHeartbeat = RunService.Heartbeat:Connect(function()
+		local char = client.Character
+		if not char then return end
+		local misc = getgenv().ARCHNEM.misc
+		if not misc.Headless and not misc.HeadlessAll then return end
+		applyHeadlessLocal(char, misc.HeadlessAll)
+	end)
+	if getgenv().__ARCHNEM_RUNTIME then
+		getgenv().__ARCHNEM_RUNTIME.headlessHeartbeatConn = headlessHeartbeat
+	end
+end
+
+local function stopHeadlessHeartbeat()
+	if headlessHeartbeat then
+		headlessHeartbeat:Disconnect()
+		headlessHeartbeat = nil
+	end
+	if getgenv().__ARCHNEM_RUNTIME then
+		getgenv().__ARCHNEM_RUNTIME.headlessHeartbeatConn = nil
+	end
+end
+
+local function updateHeadlessState(character)
+	if not character then
+		stopHeadlessHeartbeat()
+		return
+	end
+	local misc = getgenv().ARCHNEM.misc
+	removeHeadlessLocal(character, true)
+	if misc.HeadlessAll or misc.Headless then
+		applyHeadlessLocal(character, misc.HeadlessAll)
+		startHeadlessHeartbeat()
+	else
+		stopHeadlessHeartbeat()
+	end
+end
+
+
+
+function applyKorblox(character)
+	local function setLimb(limbName)
+		local limb = character:FindFirstChild(limbName)
+		if limb then
+			if limbName == "RightUpperLeg" then
+				limb.MeshId = "http://www.roblox.com/asset/?id=902942096"
+				limb.TextureID = "http://roblox.com/asset/?id=902843398"
+			elseif limbName == "RightLowerLeg" then
+				limb.MeshId = "http://www.roblox.com/asset/?id=902942093"
+				limb.Transparency = 1
+			elseif limbName == "RightFoot" then
+				limb.MeshId = "http://www.roblox.com/asset/?id=902942089"
+				limb.Transparency = 1
+			end
+		end
+	end
+	setLimb("RightFoot")
+	setLimb("RightLowerLeg")
+	setLimb("RightUpperLeg")
+end
+
+-- ==============================================================================
+-- WORLD, SKYBOX, ATMOSPHERE & LIGHTING HELPER FUNCTIONS
+-- ==============================================================================
+
+local timeChangerConn = nil
+local originalClockTime = Lighting.ClockTime
+
+local function applyTimeChanger()
+	local cfg = getgenv().ARCHNEM.misc.World.TimeChanger
+	if cfg.Enabled then
+		if not timeChangerConn then
+			timeChangerConn = RunService.Heartbeat:Connect(function()
+				Lighting.ClockTime = cfg.Value or 12
+			end)
+			if getgenv().__ARCHNEM_RUNTIME then
+				getgenv().__ARCHNEM_RUNTIME.timeChangerConn = timeChangerConn
+			end
+		end
+	else
+		if timeChangerConn then
+			timeChangerConn:Disconnect()
+			timeChangerConn = nil
+			if getgenv().__ARCHNEM_RUNTIME then
+				getgenv().__ARCHNEM_RUNTIME.timeChangerConn = nil
+			end
+		end
+		Lighting.ClockTime = originalClockTime
+	end
+end
+
+local function ensureVariants(packName)
+	if not _G.__ARCHNEM_VARIANTS then _G.__ARCHNEM_VARIANTS = {} end
+	if _G.__ARCHNEM_VARIANTS[packName] then return _G.__ARCHNEM_VARIANTS[packName] end
+	local pack = getgenv().ARCHNEM.misc.World.TexturePacks and getgenv().ARCHNEM.misc.World.TexturePacks[packName]
+	if not pack or not pack.Textures then return {} end
+	local variants = {}
+	for idx, texUrl in ipairs(pack.Textures) do
+		local cid = "rbxassetid://0"
+		pcall(function()
+			if texUrl:sub(1, 4) == "http" then
+				local asset = getcustomasset or getsynasset
+				if asset then
+					local fname = "archnem_tex_" .. packName .. "_" .. idx .. ".png"
+					if not (isfile and isfile(fname)) and writefile then
+						local body = game:HttpGet(texUrl)
+						writefile(fname, body)
+					end
+					if isfile and isfile(fname) then cid = asset(fname) end
+				end
+			else
+				cid = texUrl
+			end
+		end)
+		table.insert(variants, cid)
+	end
+	_G.__ARCHNEM_VARIANTS[packName] = variants
+	return variants
+end
+
+local function shouldSkipTexturePart(part)
+	if not part or not part:IsA("BasePart") then return true end
+	if part.Transparency >= 0.9 then return true end
+	if part.Name == "HumanoidRootPart" or part.Name == "Handle" then return true end
+	if part:IsDescendantOf(Players.LocalPlayer.Character or game) then
+		local p = part.Parent
+		if p and p:FindFirstChildOfClass("Humanoid") then return true end
+	end
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p.Character and part:IsDescendantOf(p.Character) then return true end
+	end
+	return false
+end
+
+local function applyPartTexturePack(packName)
+	local variants = ensureVariants(packName)
+	if #variants == 0 then return end
+	for _, desc in ipairs(workspace:GetDescendants()) do
+		if shouldSkipTexturePart(desc) then continue end
+		if desc:IsA("BasePart") and not desc:GetAttribute("ArchnemOrigColor") then
+			desc:SetAttribute("ArchnemOrigColor", desc.Color)
+			desc:SetAttribute("ArchnemOrigMat", desc.Material.Name)
+			local tex = Instance.new("Texture")
+			tex.Name = "ArchnemTex_" .. packName
+			tex.Texture = variants[math.random(1, #variants)]
+			tex.Face = Enum.NormalId.Top
+			tex.StudsPerTileU = 8
+			tex.StudsPerTileV = 8
+			tex.Parent = desc
+		end
+	end
+end
+
+local function clearPartTexturePack()
+	for _, desc in ipairs(workspace:GetDescendants()) do
+		if desc:IsA("BasePart") and desc:GetAttribute("ArchnemOrigColor") then
+			desc.Color = desc:GetAttribute("ArchnemOrigColor")
+			local matName = desc:GetAttribute("ArchnemOrigMat")
+			if matName and Enum.Material[matName] then desc.Material = Enum.Material[matName] end
+			desc:SetAttribute("ArchnemOrigColor", nil)
+			desc:SetAttribute("ArchnemOrigMat", nil)
+			for _, child in ipairs(desc:GetChildren()) do
+				if child:IsA("Texture") and child.Name:sub(1, 11) == "ArchnemTex_" then
+					child:Destroy()
+				end
+			end
+		end
+	end
+end
+
+local function clearVariants()
+	_G.__ARCHNEM_VARIANTS = {}
+end
+
+local function applyTexturePack()
+	clearPartTexturePack()
+	local cfg = getgenv().ARCHNEM.misc.World.TexturePack
+	if cfg.Enabled and cfg.Preset then
+		applyPartTexturePack(cfg.Preset)
+	end
+end
+
+local function clearTexturePack()
+	clearPartTexturePack()
+	clearVariants()
+end
+
+local archnemSky = nil
+local function applySkyboxPreset(sky, preset)
+	preset = preset or getgenv().ARCHNEM.misc.World.Skybox.Type or "realistic"
+	local ids = {
+		realistic = {
+			bk = "rbxassetid://271042516", dn = "rbxassetid://271042556", ft = "rbxassetid://271042556",
+			lf = "rbxassetid://271042310", rt = "rbxassetid://271042467", up = "rbxassetid://271042586"
+		},
+		minecraft = {
+			bk = "rbxassetid://159454299", dn = "rbxassetid://159454296", ft = "rbxassetid://159454293",
+			lf = "rbxassetid://159454286", rt = "rbxassetid://159454300", up = "rbxassetid://159454288"
+		},
+		purplenebula = {
+			bk = "rbxassetid://159454299", dn = "rbxassetid://159454296", ft = "rbxassetid://159454293",
+			lf = "rbxassetid://159454286", rt = "rbxassetid://159454300", up = "rbxassetid://159454288"
+		}
+	}
+	local selected = ids[preset] or ids.realistic
+	sky.SkyboxBk = selected.bk
+	sky.SkyboxDn = selected.dn
+	sky.SkyboxFt = selected.ft
+	sky.SkyboxLf = selected.lf
+	sky.SkyboxRt = selected.rt
+	sky.SkyboxUp = selected.up
+end
+
+local archnemAtmosphere = nil
+local originalAtmosphere = nil
+local function getOrCreateAtmosphere()
+	if not archnemAtmosphere or not archnemAtmosphere.Parent then
+		archnemAtmosphere = Lighting:FindFirstChild("ArchnemAtmosphere")
+		if not archnemAtmosphere then
+			archnemAtmosphere = Instance.new("Atmosphere")
+			archnemAtmosphere.Name = "ArchnemAtmosphere"
+			archnemAtmosphere.Parent = Lighting
+		end
+	end
+	return archnemAtmosphere
+end
+
+local function removeAtmosphere()
+	if archnemAtmosphere then
+		archnemAtmosphere:Destroy()
+		archnemAtmosphere = nil
+	else
+		local ex = Lighting:FindFirstChild("ArchnemAtmosphere")
+		if ex then ex:Destroy() end
+	end
+end
+
+
+-- ==============================================================================
+-- 5 TABS & UI CONTROLS WIRING (ALL FUNCTIONALITY FROM SCRIPT 1)
+-- ==============================================================================
+
+-- [ TAB 1: AIM BOT / CAMERA ]
+local tabAimbot = UI.createTab(1, "AimBot")
+
+local aimCfgSection = UI.createSection(tabAimbot, "Configuration", "left")
+UI.addToggle(aimCfgSection, "Aimbot Enabled", false, function(val)
+    getgenv().ARCHNEM.aimbot.Settings.Enabled = val
+end)
+UI.addKeybind(aimCfgSection, "Aimbot Keybind", Enum.KeyCode.C, function(key)
+    getgenv().ARCHNEM.aimbot.Settings.Key = key
+end)
+UI.addDropdown(aimCfgSection, "Key Mode", {"Hold", "Toggle"}, "Hold", function(val)
+    getgenv().ARCHNEM.aimbot.Settings.KeyMode = val
+end)
+UI.addToggle(aimCfgSection, "Sticky Aim", false, function(val)
+    getgenv().ARCHNEM.aimbot.Settings.Sticky = val
+end)
+UI.addDropdown(aimCfgSection, "Target Part", {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"}, "Head", function(val)
+    getgenv().ARCHNEM.aimbot.Settings.Part = val
+end)
+UI.addToggle(aimCfgSection, "Show FOV Circle", false, function(val)
+    getgenv().ARCHNEM.aimbot.Settings.FOV.Visible = val
+    if updateAimbotFOV then updateAimbotFOV() end
+end)
+UI.addSlider(aimCfgSection, "FOV Radius", 10, 1000, 300, false, function(val)
+    getgenv().ARCHNEM.aimbot.Settings.FOV.Radius = val
+    if updateAimbotFOV then updateAimbotFOV() end
+end)
+UI.addSlider(aimCfgSection, "FOV Transparency", 0, 1, 0.9, true, function(val)
+    getgenv().ARCHNEM.aimbot.Settings.FOV.Transparency = val
+    if updateAimbotFOV then updateAimbotFOV() end
+end)
+UI.addToggle(aimCfgSection, "Smoothing Enabled", false, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Smooth.Enabled = val
+end)
+UI.addDropdown(aimCfgSection, "Easing Style", {
+    "Linear", "Sine", "Quad", "Cubic", "Quart", "Quint", "Exponential",
+    "Circular", "Elastic", "Back", "Bounce", "Delta", "Adaptive", "Delta2", "Custom"
+}, "Delta2", function(val)
+    getgenv().ARCHNEM.aimbot.Settings.Easing = val
+end)
+UI.addSlider(aimCfgSection, "Smooth X", 0.01, 1, 0.78, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Smooth.X = val
+end)
+UI.addSlider(aimCfgSection, "Smooth Y", 0.01, 1, 0.78, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Smooth.Y = val
+end)
+UI.addToggle(aimCfgSection, "Camera Smoothing", false, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.CamSmooth.Enabled = val
+end)
+UI.addSlider(aimCfgSection, "CamSmooth X", 0.01, 1, 0.15, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.CamSmooth.X = val
+end)
+UI.addSlider(aimCfgSection, "CamSmooth Y", 0.01, 1, 0.15, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.CamSmooth.Y = val
+end)
+
+local aimChecksSection = UI.createSection(tabAimbot, "Target Checks", "left")
+UI.addToggle(aimChecksSection, "Wall Check", false, function(val)
+    getgenv().ARCHNEM.aimbot.Settings.WallCheck = val
+end)
+UI.addToggle(aimChecksSection, "Knock Check", false, function(val)
+    getgenv().ARCHNEM.aimbot.Settings.KnockCheck = val
+end)
+UI.addToggle(aimChecksSection, "Unlock On Death", false, function(val)
+    getgenv().ARCHNEM.aimbot.Settings.UnlockOnOwnDeath = val
+end)
+UI.addToggle(aimChecksSection, "Check Target Health", false, function(val)
+    getgenv().ARCHNEM.aimbot.Settings.CheckIfTargetDead = val
+end)
+
+local aimModsSection = UI.createSection(tabAimbot, "Modifications", "right")
+UI.addToggle(aimModsSection, "Enable Prediction", true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Prediction.Enabled = val
+end)
+UI.addSlider(aimModsSection, "Prediction X", 0, 20, 9, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Prediction.New.X = val
+end)
+UI.addSlider(aimModsSection, "Prediction Y", 0, 20, 7.4, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Prediction.New.Y = val
+end)
+UI.addToggle(aimModsSection, "Jump Offset Enabled", false, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Prediction.JumpOffsetEnabled = val
+end)
+UI.addSlider(aimModsSection, "Jump Offset Y", 0, 20, 7.4, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Prediction.New.YJump = val
+end)
+UI.addSlider(aimModsSection, "Fall Offset Y", 0, 20, 7.4, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Prediction.New.YFall = val
+end)
+UI.addToggle(aimModsSection, "Offset Controllage", false, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.OffsetControllage = val
+end)
+UI.addSlider(aimModsSection, "Offset X", -5, 5, 0, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Offset.X = val
+end)
+UI.addSlider(aimModsSection, "Offset Y", -5, 5, 0.3, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Offset.Y = val
+end)
+UI.addToggle(aimModsSection, "Enable Spam", false, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Spam.Enabled = val
+end)
+UI.addSlider(aimModsSection, "Spam Amount", 0, 10, 3.7, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Spam.Amount = val
+end)
+UI.addToggle(aimModsSection, "Enable Shake", false, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Shake[1] = val
+end)
+UI.addSlider(aimModsSection, "Shake X", 0, 10, 1, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Shake[2] = val
+end)
+UI.addSlider(aimModsSection, "Shake Y", 0, 10, 1, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Shake[3] = val
+end)
+UI.addSlider(aimModsSection, "Shake Z", 0, 10, 1, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.Shake[4] = val
+end)
+UI.addToggle(aimModsSection, "Pull Resistance Enabled", false, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.PullResistance.Enabled = val
+end)
+UI.addSlider(aimModsSection, "Pull Resistance Strength", 0, 1, 0.5, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.PullResistance.Strength = val
+end)
+
+local aimEasingSection = UI.createSection(tabAimbot, "Easing Config", "right")
+UI.addSlider(aimEasingSection, "Calculation", 0, 1, 0.0, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.EasingConfig.Calculation = val
+end)
+UI.addSlider(aimEasingSection, "Delta", 0, 1, 0.0, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.EasingConfig.Delta = val
+end)
+UI.addSlider(aimEasingSection, "Rapid", 0, 1, 0.0, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.EasingConfig.Rapid = val
+end)
+UI.addSlider(aimEasingSection, "Offset", 0, 1, 0.0, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.EasingConfig.Offset = val
+end)
+UI.addSlider(aimEasingSection, "Controllage", 0, 1, 0.0, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.EasingConfig.Controllage = val
+end)
+UI.addSlider(aimEasingSection, "Custom Control", 0, 1, 0.0, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.CustomEasingConfig.Control = val
+end)
+UI.addSlider(aimEasingSection, "Custom Alpha", 0.01, 1, 1, true, function(val)
+    getgenv().ARCHNEM.aimbot.Configuration.CustomEasingConfig.Alpha = val
+end)
+
+-- [ TAB 2: SILENT AIM ]
+local tabSilent = UI.createTab(2, "SilentAim")
+local silentSectionGen = UI.createSection(tabSilent, "General & Targeting", "left")
+UI.addToggle(silentSectionGen, "Silent Aim Enabled", false, function(val)
+    getgenv().ARCHNEM.silent.Settings.General.Enabled = val
+end)
+UI.addDropdown(silentSectionGen, "Silent Type", {"Target", "FOV"}, "Target", function(val)
+    getgenv().ARCHNEM.silent.Settings.Type = val
+end)
+UI.addDropdown(silentSectionGen, "Target Part", {"Head", "HumanoidRootPart", "UpperTorso", "LowerTorso"}, "HumanoidRootPart", function(val)
+    getgenv().ARCHNEM.silent.Settings.Part = val
+end)
+UI.addToggle(silentSectionGen, "Closest Part", false, function(val)
+    getgenv().ARCHNEM.silent.Settings.ClosestPart = val
+end)
+UI.addToggle(silentSectionGen, "Prediction Enabled", false, function(val)
+    getgenv().ARCHNEM.silent.Settings.General.Prediction[1] = val
+end)
+UI.addSlider(silentSectionGen, "Prediction Value", 0, 0.5, 0.0, true, function(val)
+    getgenv().ARCHNEM.silent.Settings.General.Prediction[2] = val
+end)
+UI.addToggle(silentSectionGen, "Visualize Target", true, function(val)
+    getgenv().ARCHNEM.silent.Settings.Visualizetarget.Enabled = val
+end)
+
+local silentSectionVis = UI.createSection(tabSilent, "FOV & Visuals", "right")
+UI.addToggle(silentSectionVis, "Show FOV Circle", false, function(val)
+    getgenv().ARCHNEM.silent.Settings.Visuals.FOVVisible = val
+    if updateFOVCircle then updateFOVCircle() end
+end)
+UI.addSlider(silentSectionVis, "FOV Radius", 10, 800, 50, false, function(val)
+    getgenv().ARCHNEM.silent.Settings.Visuals.FOVRadius = val
+    if updateFOVCircle then updateFOVCircle() end
+end)
+UI.addSlider(silentSectionVis, "FOV Transparency", 0, 1, 1, true, function(val)
+    getgenv().ARCHNEM.silent.Settings.Visuals.FOVTransparency = val
+    if updateFOVCircle then updateFOVCircle() end
+end)
+UI.addButton(silentSectionVis, "Refresh Silent Cache", function()
+    if updateFOVCircle then updateFOVCircle() end
+end)
+
+-- [ TAB 3: ESP ]
+local tabESP = UI.createTab(3, "ESP")
+
+local espBoxSection = UI.createSection(tabESP, "Box ESP", "left")
+UI.addToggle(espBoxSection, "ESP Enabled", false, function(val)
+    getgenv().ARCHNEM.esp.Enabled = val
+end)
+UI.addToggle(espBoxSection, "Show Box", false, function(val)
+    getgenv().ARCHNEM.esp.ShowBox = val
+end)
+UI.addDropdown(espBoxSection, "Box Type", {"Normal", "Corner"}, "Normal", function(val)
+    getgenv().ARCHNEM.esp.BoxType = val
+end)
+UI.addToggle(espBoxSection, "Show Filled Box", false, function(val)
+    getgenv().ARCHNEM.esp.ShowFilledBox = val
+end)
+
+local espTextSection = UI.createSection(tabESP, "Text ESP", "right")
+UI.addToggle(espTextSection, "Show Name", false, function(val)
+    getgenv().ARCHNEM.esp.ShowName = val
+end)
+UI.addToggle(espTextSection, "Show Distance", false, function(val)
+    getgenv().ARCHNEM.esp.ShowDistance = val
+end)
+
+local espHealthSection = UI.createSection(tabESP, "Health ESP", "left")
+UI.addToggle(espHealthSection, "Show Health Bar", false, function(val)
+    getgenv().ARCHNEM.esp.ShowHealth = val
+end)
+UI.addToggle(espHealthSection, "Health Based Color", false, function(val)
+    getgenv().ARCHNEM.esp.HealthBasedColor = val
+end)
+UI.addToggle(espHealthSection, "Animated Health Bars", false, function(val)
+    getgenv().ARCHNEM.esp.AnimatedHealthBars = val
+end)
+
+local espSettingsSection = UI.createSection(tabESP, "ESP Settings", "right")
+UI.addToggle(espSettingsSection, "Team Check", false, function(val)
+    getgenv().ARCHNEM.esp.Teamcheck = val
+end)
+UI.addToggle(espSettingsSection, "Wall Check", false, function(val)
+    getgenv().ARCHNEM.esp.WallCheck = val
+end)
+
+-- ==============================================================================
+-- ==============================================================================
+-- [ ESP > WEATHER ] — один список выбора, без настроек
+-- ==============================================================================
+pcall(function()
+    local weatherSection = UI.createSection(tabESP, "Weather", "left")
+    UI.addDropdown(weatherSection, "Weather", {
+        "None", "Rain", "Thunderstorm", "Snow", "Sandstorm"
+    }, "None", function(val)
+        local eng = getgenv().__ARCHNEM_WEATHER
+        if eng and eng.applyPreset then
+            local ok, err = pcall(eng.applyPreset, val)
+            if ok then
+                print("[ARCHNEM][Weather] Пресет -> " .. tostring(val) .. (val == "None" and " (погода выключена)" or " (включено)"))
+            else
+                warn("[ARCHNEM][Weather] Ошибка включения '" .. tostring(val) .. "': " .. tostring(err))
+            end
+        else
+            warn("[ARCHNEM][Weather] Движок погоды не загружен (__ARCHNEM_WEATHER отсутствует)")
+        end
+    end)
+    UI.addToggle(weatherSection, "Ground FX", true, function(val)
+        getgenv().ARCHNEM.weather.GroundFX = val
+        local eng = getgenv().__ARCHNEM_WEATHER
+        if eng and eng.applyPreset then pcall(eng.applyPreset, getgenv().ARCHNEM.weather.Preset or "Rain") end
+    end)
+end)
+
+-- [ TAB 4: SETTINGS / VISUALS / MISC / WORLD ]
+local tabSettings = UI.createTab(4, "Settings")
+
+local charSection = UI.createSection(tabSettings, "Character & Misc", "left")
+UI.addToggle(charSection, "Headless All", false, function(val)
+    getgenv().ARCHNEM.misc.HeadlessAll = val
+    if client.Character then
+        updateHeadlessState(client.Character)
+    end
+end)
+UI.addToggle(charSection, "Headless Local", false, function(val)
+    getgenv().ARCHNEM.misc.Headless = val
+    if client.Character then
+        updateHeadlessState(client.Character)
+    end
+end)
+UI.addToggle(charSection, "Korblox Local", false, function(val)
+    getgenv().ARCHNEM.misc.Korblox = val
+    if val and client.Character and applyKorblox then
+        applyKorblox(client.Character)
+    end
+end)
+UI.addToggle(charSection, "Anti-Void Enabled", true, function(val)
+    getgenv().ARCHNEM.misc.AntiVoid.Enabled = val
+end)
+UI.addSlider(charSection, "Void Threshold", -1000, 0, -500, false, function(val)
+    getgenv().ARCHNEM.misc.AntiVoid.VoidThreshold = val
+end)
+UI.addSlider(charSection, "Void Check Offset", 0, 50, 5, false, function(val)
+    getgenv().ARCHNEM.misc.AntiVoid.CheckOffset = val
+end)
+UI.addSlider(charSection, "Void Teleport Height", 0, 50, 5, false, function(val)
+    getgenv().ARCHNEM.misc.AntiVoid.TeleportHeight = val
+end)
+UI.addToggle(charSection, "Walkspeed Enabled", false, function(val)
+    getgenv().ARCHNEM.misc.Walkspeed.Enabled = val
+    if applyWalkspeed then applyWalkspeed() end
+end)
+UI.addKeybind(charSection, "Walkspeed Key", Enum.KeyCode.Z, function(key)
+    getgenv().ARCHNEM.misc.Walkspeed.Key = key
+end)
+UI.addSlider(charSection, "Walkspeed Speed", 16, 1000, 400, false, function(val)
+    getgenv().ARCHNEM.misc.Walkspeed.Speed = val
+    if applyWalkspeed then applyWalkspeed() end
+end)
+UI.addToggle(charSection, "Macro Enabled", false, function(val)
+    getgenv().ARCHNEM.misc.Macro.Enabled = val
+end)
+UI.addKeybind(charSection, "Macro Key", Enum.KeyCode.X, function(key)
+    getgenv().ARCHNEM.misc.Macro.Key = key
+end)
+
+local spinSection = UI.createSection(tabSettings, "360 Spin", "right")
+UI.addToggle(spinSection, "360 Spin Toggle", false, function(val)
+    getgenv().ARCHNEM.Key360.Toggle = val
+end)
+UI.addKeybind(spinSection, "360 Keybind", Enum.KeyCode.V, function(key)
+    getgenv().ARCHNEM.Key360.Keybind = key
+end)
+UI.addSlider(spinSection, "360 Rotation Speed", 1000, 15000, 8000, false, function(val)
+    getgenv().ARCHNEM.Key360.RotationSpeed = val
+end)
+
+local radarSection = UI.createSection(tabSettings, "Radar", "left")
+UI.addToggle(radarSection, "Radar Enabled", false, function(val)
+    getgenv().ARCHNEM.misc.Radar.Enabled = val
+    if updateRadar then updateRadar() end
+end)
+UI.addToggle(radarSection, "Radar Friends Only", false, function(val)
+    getgenv().ARCHNEM.misc.Radar.Friends = val
+    if updateRadar then updateRadar() end
+end)
+UI.addSlider(radarSection, "Radar Size", 50, 300, 120, false, function(val)
+    getgenv().ARCHNEM.misc.Radar.Size = val
+    if updateRadar then updateRadar() end
+end)
+UI.addSlider(radarSection, "Radar Distance", 100, 2000, 500, false, function(val)
+    getgenv().ARCHNEM.misc.Radar.Distance = val
+    if updateRadar then updateRadar() end
+end)
+UI.addSlider(radarSection, "Radar Pos X", 0, 3000, 1750, false, function(val)
+    getgenv().ARCHNEM.misc.Radar.Position[1] = val
+    if updateRadar then updateRadar() end
+end)
+UI.addSlider(radarSection, "Radar Pos Y", 0, 2000, 80, false, function(val)
+    getgenv().ARCHNEM.misc.Radar.Position[2] = val
+    if updateRadar then updateRadar() end
+end)
+
+local weaponSection = UI.createSection(tabSettings, "Bullet & Skin Changer", "right")
+UI.addToggle(weaponSection, "Bullet Changer Enabled", false, function(val)
+    getgenv().ARCHNEM.misc.BulletChanger.Enabled = val
+    if applyBulletChanger then applyBulletChanger() end
+end)
+UI.addDropdown(weaponSection, "DoubleBarrel Bullet", {"Default", "Red", "Blue", "Green", "Purple", "Yellow"}, "Default", function(val)
+    getgenv().ARCHNEM.misc.BulletChanger.DoubleBarrel = val
+    if applyBulletChanger then applyBulletChanger() end
+end)
+UI.addDropdown(weaponSection, "Revolver Bullet", {"Default", "Red", "Blue", "Green", "Purple", "Yellow"}, "Default", function(val)
+    getgenv().ARCHNEM.misc.BulletChanger.Revolver = val
+    if applyBulletChanger then applyBulletChanger() end
+end)
+UI.addToggle(weaponSection, "Skin Changer Enabled", false, function(val)
+    getgenv().ARCHNEM.misc.SkinChanger.Enabled = val
+    if applySkinChanger then applySkinChanger() end
+end)
+UI.addDropdown(weaponSection, "DoubleBarrel Skin", {"Default", "Gold", "Carbon", "Neon", "Crimson"}, "Default", function(val)
+    getgenv().ARCHNEM.misc.SkinChanger.DoubleBarrel = val
+    if applySkinChanger then applySkinChanger() end
+end)
+UI.addDropdown(weaponSection, "Revolver Skin", {"Default", "Gold", "Carbon", "Neon", "Crimson"}, "Default", function(val)
+    getgenv().ARCHNEM.misc.SkinChanger.Revolver = val
+    if applySkinChanger then applySkinChanger() end
+end)
+
+local worldSection = UI.createSection(tabSettings, "World & Skybox", "left")
+UI.addToggle(worldSection, "Time Changer Enabled", false, function(val)
+    getgenv().ARCHNEM.misc.World.TimeChanger.Enabled = val
+    if applyTimeChanger then applyTimeChanger() end
+end)
+UI.addSlider(worldSection, "Clock Time", 0, 24, 12, false, function(val)
+    getgenv().ARCHNEM.misc.World.TimeChanger.Value = val
+    if applyTimeChanger then applyTimeChanger() end
+end)
+UI.addToggle(worldSection, "Texture Pack Enabled", false, function(val)
+    getgenv().ARCHNEM.misc.World.TexturePack.Enabled = val
+    if applyTexturePack then applyTexturePack() end
+end)
+UI.addDropdown(worldSection, "Texture Preset", {"winter", "autumn", "summer", "minecraft", "sakura", "monochrome"}, "winter", function(val)
+    getgenv().ARCHNEM.misc.World.TexturePack.Preset = val
+    if applyTexturePack then applyTexturePack() end
+end)
+UI.addButton(worldSection, "Clear Texture Pack", function()
+    if clearTexturePack then clearTexturePack() end
+end)
+UI.addToggle(worldSection, "Skybox Enabled", false, function(val)
+    getgenv().ARCHNEM.misc.World.Skybox.Enabled = val
+    if val and applySkyboxPreset then
+        local sky = Lighting:FindFirstChildOfClass("Sky") or Instance.new("Sky", Lighting)
+        applySkyboxPreset(sky, getgenv().ARCHNEM.misc.World.Skybox.Type)
+    end
+end)
+UI.addDropdown(worldSection, "Skybox Preset", {"realistic", "minecraft", "purplenebula", "sunset", "cyberpunk", "galaxy"}, "realistic", function(val)
+    getgenv().ARCHNEM.misc.World.Skybox.Type = val
+    if getgenv().ARCHNEM.misc.World.Skybox.Enabled and applySkyboxPreset then
+        local sky = Lighting:FindFirstChildOfClass("Sky") or Instance.new("Sky", Lighting)
+        applySkyboxPreset(sky, val)
+    end
+end)
+
+local atmoSection = UI.createSection(tabSettings, "Atmosphere & Lighting", "right")
+UI.addToggle(atmoSection, "Atmosphere Enabled", false, function(val)
+    getgenv().ARCHNEM.misc.World.Atmosphere.Enabled = val
+    if val and getOrCreateAtmosphere then
+        local a = getOrCreateAtmosphere()
+        a.Density = getgenv().ARCHNEM.misc.World.Atmosphere.Density
+        a.Offset = getgenv().ARCHNEM.misc.World.Atmosphere.Offset
+        a.Glare = getgenv().ARCHNEM.misc.World.Atmosphere.Glare
+        a.Haze = getgenv().ARCHNEM.misc.World.Atmosphere.Haze
+    elseif removeAtmosphere then
+        removeAtmosphere()
+    end
+end)
+UI.addSlider(atmoSection, "Density", 0, 1, 0.3, true, function(val)
+    getgenv().ARCHNEM.misc.World.Atmosphere.Density = val
+    if getgenv().ARCHNEM.misc.World.Atmosphere.Enabled and getOrCreateAtmosphere then
+        getOrCreateAtmosphere().Density = val
+    end
+end)
+UI.addSlider(atmoSection, "Offset", 0, 1, 0, true, function(val)
+    getgenv().ARCHNEM.misc.World.Atmosphere.Offset = val
+    if getgenv().ARCHNEM.misc.World.Atmosphere.Enabled and getOrCreateAtmosphere then
+        getOrCreateAtmosphere().Offset = val
+    end
+end)
+UI.addSlider(atmoSection, "Glare", 0, 10, 0, true, function(val)
+    getgenv().ARCHNEM.misc.World.Atmosphere.Glare = val
+    if getgenv().ARCHNEM.misc.World.Atmosphere.Enabled and getOrCreateAtmosphere then
+        getOrCreateAtmosphere().Glare = val
+    end
+end)
+UI.addSlider(atmoSection, "Haze", 0, 10, 0, true, function(val)
+    getgenv().ARCHNEM.misc.World.Atmosphere.Haze = val
+    if getgenv().ARCHNEM.misc.World.Atmosphere.Enabled and getOrCreateAtmosphere then
+        getOrCreateAtmosphere().Haze = val
+    end
+end)
+UI.addToggle(atmoSection, "Custom Brightness Enabled", false, function(val)
+    getgenv().ARCHNEM.misc.World.Lighting.Brightness.Enabled = val
+    if val then Lighting.Brightness = getgenv().ARCHNEM.misc.World.Lighting.Brightness.Value end
+end)
+UI.addSlider(atmoSection, "Brightness Value", 0, 10, 2, true, function(val)
+    getgenv().ARCHNEM.misc.World.Lighting.Brightness.Value = val
+    if getgenv().ARCHNEM.misc.World.Lighting.Brightness.Enabled then
+        Lighting.Brightness = val
+    end
+end)
+
+
+-- [ TAB 5: CONFIG SYSTEM ]
+local tabConfig = UI.createTab(5, "ConfigSystem")
+local configSection = UI.createSection(tabConfig, "Configuration System", "left")
+local runtimeSection = UI.createSection(tabConfig, "Script & Runtime Control", "right")
+UI.addButton(runtimeSection, "Unload Menu", function()
+    if getgenv().__ARCHNEM_RUNTIME and getgenv().__ARCHNEM_RUNTIME.unload then
+        getgenv().__ARCHNEM_RUNTIME:unload()
+    end
+end)
+UI.addButton(runtimeSection, "Refresh All Fonts", function()
+    for _, object in ipairs(screenGui:GetDescendants()) do
+        applyUIFont(object)
+    end
+end)
+UI.addButton(runtimeSection, "Clear ESP Cache", function()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if removeEsp then removeEsp(p) end
+        if createEsp and p ~= client then createEsp(p) end
+    end
+end)
+local configDir = "ARCHNEM_CONFIGS/"
+if makefolder and not isfolder(configDir) then
+    pcall(function() makefolder(configDir) end)
+end
+
+local function get_config_list()
+    local list = {}
+    if isfolder and isfolder(configDir) and listfiles then
+        for _, file in pairs(listfiles(configDir)) do
+            local name = string.match(file, "([^/\\]+)%.cfg$")
+            if name then table.insert(list, name) end
+        end
+    end
+    if #list == 0 then table.insert(list, "Default") end
+    return list
+end
+
+local configDropdown = UI.addDropdown(configSection, "Saved Configs", get_config_list(), "Default", function(val)
+    _G.__ARCHNEM_SELECTED_CFG = val
+end)
+_G.__ARCHNEM_SELECTED_CFG = get_config_list()[1] or "Default"
+
+local configNameBox = UI.addTextBox(configSection, "Enter config name...", function(txt)
+    _G.__ARCHNEM_CFG_TEXT = txt
+end)
+
+UI.addButton(configSection, "Create Config", function()
+    local name = _G.__ARCHNEM_CFG_TEXT or "NewConfig"
+    if name == "" then return end
+    if writefile and HttpService then
+        local data = HttpService:JSONEncode(getgenv().ARCHNEM)
+        pcall(function() writefile(configDir .. name .. ".cfg", data) end)
+        if configDropdown.refreshOptions then
+            configDropdown.refreshOptions(get_config_list())
+        end
+    end
+end)
+
+UI.addButton(configSection, "Save Config", function()
+    local name = _G.__ARCHNEM_SELECTED_CFG or "Default"
+    if writefile and HttpService then
+        local data = HttpService:JSONEncode(getgenv().ARCHNEM)
+        pcall(function() writefile(configDir .. name .. ".cfg", data) end)
+    end
+end)
+
+UI.addButton(configSection, "Load Config", function()
+    local name = _G.__ARCHNEM_SELECTED_CFG
+    if name and isfile and isfile(configDir .. name .. ".cfg") and HttpService then
+        local ok, content = pcall(function() return readfile(configDir .. name .. ".cfg") end)
+        if ok and content then
+            local okD, data = pcall(function() return HttpService:JSONDecode(content) end)
+            if okD and type(data) == "table" then
+                for k, v in pairs(data) do
+                    if getgenv().ARCHNEM[k] and type(v) == "table" then
+                        for k2, v2 in pairs(v) do getgenv().ARCHNEM[k][k2] = v2 end
+                    else
+                        getgenv().ARCHNEM[k] = v
+                    end
+                end
+            end
+        end
+    end
+end)
+
+UI.addButton(configSection, "Delete Config", function()
+    local name = _G.__ARCHNEM_SELECTED_CFG
+    if name and isfile and isfile(configDir .. name .. ".cfg") and delfile then
+        pcall(function() delfile(configDir .. name .. ".cfg") end)
+        if configDropdown.refreshOptions then
+            configDropdown.refreshOptions(get_config_list())
+        end
+    end
+end)
+
+UI.addButton(configSection, "Unload Menu", function()
+    if getgenv().__ARCHNEM_RUNTIME and getgenv().__ARCHNEM_RUNTIME.unload then
+        getgenv().__ARCHNEM_RUNTIME:unload()
+    end
+end)
+
+-- ставим 1-ю вкладку активной при старте с эффектом свечения
+task.defer(function()
+    if UI and UI.switchTab then
+        UI.switchTab(1)
+    end
+end)
+
+function applyBulletChanger()
+	local BulletChangerConfig = getgenv().ARCHNEM.misc.BulletChanger
+	if not BulletChangerConfig.Enabled then return end
+	local LocalPlayer = game:GetService("Players").LocalPlayer
+	local dataFolder = LocalPlayer:FindFirstChild("DataFolder")
+	if not dataFolder then return end
+	local inventoryData = dataFolder:FindFirstChild("InventoryData")
+	if not inventoryData then return end
+	local bulletBeams = inventoryData:FindFirstChild("BulletBeams")
+	local equippedBulletBeams = dataFolder:FindFirstChild("EquippedBulletBeams")
+	if bulletBeams and bulletBeams:IsA("StringValue") then
+		local bulletBeamData = {}
+		for weapon, skin in pairs(BulletChangerConfig) do
+			if weapon ~= "Enabled" then
+				local code
+				if weapon == "DoubleBarrel" then code = "109d1326878cc594bc1bb42d126250810999782f"
+				elseif weapon == "Revolver" then code = "539db315b53f77390c0aa74773158e25bedcdd6e"
+				elseif weapon == "Shotgun" then code = "b415a7273aa86cbc2adc445fde5435eb5afababa"
+				elseif weapon == "SMG" then code = "005af87725b42ac4ca8103d11af6bf0c7d55f7b3"
+				elseif weapon == "TacticalShotgun" then code = "959cb315b53f77390c0aa74773158e25bedcdd6f" end
+				if code then bulletBeamData[code] = { Name = skin } end
+			end
+		end
+		bulletBeams.Value = game:GetService("HttpService"):JSONEncode(bulletBeamData)
+	end
+	if equippedBulletBeams and equippedBulletBeams:IsA("StringValue") then
+		local equippedData = {
+			["[DoubleBarrel]"] = "109d1326878cc594bc1bb42d126250810999782f",
+			["[Revolver]"] = "539db315b53f77390c0aa74773158e25bedcdd6e",
+			["[TacticalShotgun]"] = "959cb315b53f77390c0aa74773158e25bedcdd6f",
+			["[SMG]"] = "005af87725b42ac4ca8103d11af6bf0c7d55f7b3",
+			["[Shotgun]"] = "b415a7273aa86cbc2adc445fde5435eb5afababa"
+		}
+		equippedBulletBeams.Value = game:GetService("HttpService"):JSONEncode(equippedData)
+	end
+end
+
+function applySkinChanger()
+	if not getgenv().ARCHNEM.misc.SkinChanger.Enabled then return end
+	local LocalPlayer = game:GetService("Players").LocalPlayer
+	local Character = LocalPlayer.Character
+	local Backpack = LocalPlayer:FindFirstChild("Backpack")
+	local ReplicatedStorage = game:GetService("ReplicatedStorage")
+	local WrapsFolder = ReplicatedStorage:FindFirstChild("Wraps")
+	if not WrapsFolder then return end
+	local KnivesFolder = ReplicatedStorage:FindFirstChild("Knives")
+	local function findWeapon(container, weaponName)
+		if not container then return nil end
+		for _, item in ipairs(container:GetChildren()) do
+			if item.Name == weaponName or item.Name == "[" .. weaponName .. "]" then return item end
+		end
+		return nil
+	end
+	local function removeSkinClones(weapon)
+		if not weapon then return end
+		for _, child in ipairs(weapon:GetChildren()) do
+			if child:IsA("Model") and child.Name ~= "Handle" and child.Name ~= "Blade" then
+				pcall(function() child:Destroy() end)
+			end
+		end
+	end
+	local function weldParts(part0, part1)
+		if not part0 or not part1 then return end
+		pcall(function()
+			local existingWeld = part0:FindFirstChild("WeldConstraint")
+			if existingWeld then existingWeld:Destroy() end
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = part0
+			weld.Part1 = part1
+			weld.Parent = part0
+		end)
+	end
+	local function applySkinToWeapon(weapon, skinName, isWeapon)
+		if not weapon then return end
+		if not skinName or skinName == "Default" then
+			local handle = weapon:FindFirstChild("Handle")
+			if handle then handle.Transparency = 0 end
+			removeSkinClones(weapon)
+			return
+		end
+		local handle = weapon:FindFirstChild("Handle")
+		if not handle then return end
+		if isWeapon then
+			local weaponWrapsFolder = WrapsFolder:FindFirstChild(weapon.Name)
+			if not weaponWrapsFolder then weaponWrapsFolder = WrapsFolder:FindFirstChild("[" .. weapon.Name .. "]") end
+			if not weaponWrapsFolder then return end
+			local skinModel = weaponWrapsFolder:FindFirstChild(skinName)
+			if not skinModel then
+				for _, item in ipairs(weaponWrapsFolder:GetChildren()) do
+					if item.Name:lower() == skinName:lower() then skinModel = item; break; end
+				end
+			end
+			if not skinModel then return end
+			removeSkinClones(weapon)
+			local skinClone = skinModel:Clone()
+			skinClone.Name = "SkinClone_" .. skinName
+			skinClone.Parent = weapon
+			local skinPrimaryPart = skinClone.PrimaryPart
+			if not skinPrimaryPart then
+				for _, part in ipairs(skinClone:GetDescendants()) do
+					if part:IsA("BasePart") then skinPrimaryPart = part; pcall(function() skinClone.PrimaryPart = skinPrimaryPart end); break; end
+				end
+			end
+			if not skinPrimaryPart then skinClone:Destroy(); return; end
+			for _, part in ipairs(skinClone:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = false; part.Anchored = false; part.Massless = true;
+					pcall(function() part.TopSurface = Enum.SurfaceType.Smooth; part.BottomSurface = Enum.SurfaceType.Smooth; end)
+				end
+			end
+			pcall(function() skinClone:SetPrimaryPartCFrame(handle.CFrame) end)
+			weldParts(handle, skinPrimaryPart)
+			handle.Transparency = 1
+		else
+			if not KnivesFolder then return end
+			local knifeModel = KnivesFolder:FindFirstChild(skinName)
+			if not knifeModel then
+				for _, item in ipairs(KnivesFolder:GetChildren()) do
+					if item.Name:lower() == skinName:lower() then knifeModel = item; break; end
+				end
+			end
+			if not knifeModel then return end
+			removeSkinClones(weapon)
+			local knifeClone = knifeModel:Clone()
+			knifeClone.Name = "KnifeClone_" .. skinName
+			knifeClone.Parent = weapon
+			local knifePrimaryPart = knifeClone.PrimaryPart
+			if not knifePrimaryPart then
+				for _, part in ipairs(knifeClone:GetDescendants()) do
+					if part:IsA("BasePart") then knifePrimaryPart = part; pcall(function() knifeClone.PrimaryPart = knifePrimaryPart end); break; end
+				end
+			end
+			if not knifePrimaryPart then knifeClone:Destroy(); return; end
+			for _, part in ipairs(knifeClone:GetDescendants()) do
+				if part:IsA("BasePart") then
+					part.CanCollide = false; part.Anchored = false; part.Massless = true;
+					pcall(function() part.TopSurface = Enum.SurfaceType.Smooth; part.BottomSurface = Enum.SurfaceType.Smooth; end)
+				end
+			end
+			pcall(function() knifeClone:SetPrimaryPartCFrame(handle.CFrame) end)
+			weldParts(handle, knifePrimaryPart)
+			handle.Transparency = 1
+		end
+	end
+	local function applyToContainer(container)
+		if not container then return end
+		local weaponNames = {"DoubleBarrel", "Revolver", "TacticalShotgun", "SMG", "Shotgun"}
+		for _, weaponName in ipairs(weaponNames) do
+			local skinName = getgenv().ARCHNEM.misc.SkinChanger[weaponName]
+			if skinName and skinName ~= "Default" then
+				local weapon = findWeapon(container, weaponName)
+				if weapon then applySkinToWeapon(weapon, skinName, true) end
+			end
+		end
+		local knifeSkin = getgenv().ARCHNEM.misc.SkinChanger.Knife
+		if knifeSkin and knifeSkin ~= "Default" then
+			local knife = findWeapon(container, "Knife")
+			if knife then applySkinToWeapon(knife, knifeSkin, false) end
+		end
+	end
+	if Backpack then applyToContainer(Backpack) end
+	if Character then applyToContainer(Character) end
+end
+
+if getgenv().__ARCHNEM_RUNTIME then
+	local ok, err = pcall(function()
+		local rt = getgenv().__ARCHNEM_RUNTIME
+		local connections = {
+			"inputConn", "inputEndedConn", "renderConn", "charConn",
+			"heartbeatConn", "desyncHeartbeat", "antiVoidHeartbeat",
+			"antiVoidStepped", "uiToggleConn", "macroConn", "espRenderConn",
+			"mouseDeltaConn", "timeChangerConn", "headlessHeartbeatConn",
+			"sunMoveConn", "atmospherePulseConn", "weatherConn"
+		}
+		for _, connName in ipairs(connections) do
+			if rt[connName] and rt[connName].Connected then rt[connName]:Disconnect() end
+		end
+		if rt.drawings then
+			for _, d in ipairs(rt.drawings) do
+				pcall(function()
+					if d and type(d.Remove) == "function" then d:Remove()
+					elseif d then d.Visible = false end
+				end)
+			end
+		end
+		if rt.prevMetatableIndex then
+			local mt = getrawmetatable(game)
+			setreadonly(mt, false)
+			mt.__index = rt.prevMetatableIndex
+			setreadonly(mt, true)
+		end
+		if rt.desyncPart then rt.desyncPart:Destroy() end
+	end)
+	getgenv().__ARCHNEM_RUNTIME = nil
+end
+
+getgenv().__ARCHNEM_RUNTIME = {
+	drawings = {},
+	inputConn = nil, inputEndedConn = nil, renderConn = nil, charConn = nil,
+	heartbeatConn = nil, prevMetatableIndex = nil, uiToggleConn = nil,
+	macroConn = nil, espRenderConn = nil, mouseDeltaConn = nil,
+	timeChangerConn = nil, headlessHeartbeatConn = nil,
+	sunMoveConn = nil,
+}
+
+local function registerDrawing(d)
+	if not d then return end
+	table.insert(getgenv().__ARCHNEM_RUNTIME.drawings, d)
+end
+
+local function DeltaEasing(alpha)
+	local p = 1.70158
+	if alpha < 0.5 then
+		alpha = alpha * 2
+		return 0.5 * alpha * alpha * ((p + 1) * alpha - p)
+	else
+		alpha = (alpha - 0.5) * 2
+		return 0.5 * alpha * alpha * ((p + 1) * alpha + p) + 0.5
+	end
+end
+
+local function AdaptiveEasing(alpha, duration)
+	local t = alpha / (duration or 1)
+	local easedAlpha = (1 - math.exp(-5 * t)) / (1 - math.exp(-5))
+	local customEasedAlpha = easedAlpha * (2 - easedAlpha)
+	local config = getgenv().ARCHNEM.aimbot.Configuration.EasingConfig
+	local amplitude = config.Calculation
+	local frequency = config.Rapid
+	local offset = config.Offset
+	local customEffect = amplitude * math.sin(frequency * t + offset)
+	customEasedAlpha = customEasedAlpha + customEffect
+	local smoothingFactor = config.Delta
+	customEasedAlpha = alpha * smoothingFactor + customEasedAlpha * (1 - smoothingFactor)
+	local jitterAmount = config.Controllage
+	local randomControllage = (math.random() * 2 - 1) * jitterAmount
+	customEasedAlpha = customEasedAlpha + randomControllage
+	return math.max(0, math.min(1, customEasedAlpha))
+end
+
+local function Delta2Easing(alpha)
+	local p = 1.70158
+	local s = p / 4
+	if alpha < 0.5 then
+		alpha = alpha * 2
+		local t = alpha - 1
+		return -0.5 * (math.exp(10 * t) * math.sin((t - s) * (2 * math.pi) / p))
+	else
+		alpha = (alpha - 0.5) * 2.1
+		local t = alpha
+		return 1 + 0.5 * (math.exp(-10 * t) * math.sin((t - s) * (2 * math.pi) / p))
+	end
+end
+
+local function CustomEasing(alpha)
+	local config = getgenv().ARCHNEM.aimbot.Configuration.CustomEasingConfig
+	local control = config.Control or 0.5
+	local alphat = config.Alpha or 1
+	if alpha > control then return alphat * (alpha - control) + control * 1.424 end
+	return alpha
+end
+
+local function exitEasing(alpha)
+	return 1.5 - 1.5 * math.cos(math.pi * alpha)
+end
+
+local aimbotActive = false
+local aimbotTarget = nil
+local Toggle360 = false
+local LastRenderTime360 = 0
+local FullCircleRotation = 2 * math.pi
+local TotalRotation360 = 0
+local MacroEnabled = false
+
+local _espFrame = 0
+local _radarFrame = 0
+
+local mouseDelta = Vector2.new(0, 0)
+local lastMousePosition = Vector2.new(0, 0)
+local mouseMoving = false
+local mouseStopTime = 0
+
+local mouseDeltaConn = UserInputService.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		local currentPos = Vector2.new(input.Position.X, input.Position.Y)
+		mouseDelta = currentPos - lastMousePosition
+		lastMousePosition = currentPos
+		if mouseDelta.Magnitude > 0.5 then
+			mouseMoving = true
+			mouseStopTime = tick()
+		else
+			if tick() - mouseStopTime > 0.1 then mouseMoving = false end
+		end
+	end
+end)
+getgenv().__ARCHNEM_RUNTIME.mouseDeltaConn = mouseDeltaConn
+
+local circle = Drawing.new("Circle")
+circle.Color = Color3.fromRGB(255, 255, 255)
+circle.Thickness = 2
+circle.Filled = false
+circle.Transparency = getgenv().ARCHNEM.silent.Settings.Visuals.FOVTransparency
+circle.Radius = getgenv().ARCHNEM.silent.Settings.Visuals.FOVRadius
+circle.Visible = getgenv().ARCHNEM.silent.Settings.Visuals.FOVVisible
+registerDrawing(circle)
+
+local aimbotFOVCircle = Drawing.new("Circle")
+aimbotFOVCircle.Color = Color3.fromRGB(255, 255, 255)
+aimbotFOVCircle.Thickness = 2
+aimbotFOVCircle.Filled = false
+aimbotFOVCircle.Transparency = getgenv().ARCHNEM.aimbot.Settings.FOV.Transparency
+aimbotFOVCircle.Radius = getgenv().ARCHNEM.aimbot.Settings.FOV.Radius
+aimbotFOVCircle.Visible = getgenv().ARCHNEM.aimbot.Settings.FOV.Visible
+registerDrawing(aimbotFOVCircle)
+
+local radarBackground = Drawing.new("Circle")
+radarBackground.Color = Color3.fromRGB(25, 25, 25)
+radarBackground.Thickness = 1
+radarBackground.Filled = true
+radarBackground.Transparency = 0.8
+radarBackground.Radius = getgenv().ARCHNEM.misc.Radar.Size / 2
+radarBackground.NumSides = 64
+radarBackground.Visible = getgenv().ARCHNEM.misc.Radar.Enabled
+registerDrawing(radarBackground)
+
+local radarCircle = Drawing.new("Circle")
+radarCircle.Color = Color3.fromRGB(85, 122, 255)
+radarCircle.Thickness = 2
+radarCircle.Filled = false
+radarCircle.Transparency = 1
+radarCircle.Radius = getgenv().ARCHNEM.misc.Radar.Size / 2
+radarCircle.NumSides = 64
+radarCircle.Visible = getgenv().ARCHNEM.misc.Radar.Enabled
+registerDrawing(radarCircle)
+
+local radarLocalDot = Drawing.new("Circle")
+radarLocalDot.Color = Color3.fromRGB(255, 255, 255)
+radarLocalDot.Thickness = 1
+radarLocalDot.Filled = true
+radarLocalDot.Transparency = 1
+radarLocalDot.Radius = 4
+radarLocalDot.NumSides = 12
+radarLocalDot.Visible = getgenv().ARCHNEM.misc.Radar.Enabled
+registerDrawing(radarLocalDot)
+
+local radarLabels = {}
+local labelNames = {"N", "E", "S", "W"}
+for i, label in ipairs(labelNames) do
+	radarLabels[i] = Drawing.new("Text")
+	radarLabels[i].Text = label
+	radarLabels[i].Size = 16
+	radarLabels[i].Color = Color3.fromRGB(150, 150, 150)
+	radarLabels[i].Center = true
+	radarLabels[i].Outline = true
+	radarLabels[i].Visible = getgenv().ARCHNEM.misc.Radar.Enabled
+	registerDrawing(radarLabels[i])
+end
+
+local radarArrows = {}
+
+local function createArrow()
+	local arrow = { body = Drawing.new("Line"), tip = Drawing.new("Triangle") }
+	arrow.body.Thickness = 3
+	arrow.body.Transparency = 1
+	arrow.body.Visible = false
+	registerDrawing(arrow.body)
+	arrow.tip.Filled = true
+	arrow.tip.Transparency = 1
+	arrow.tip.Visible = false
+	registerDrawing(arrow.tip)
+	return arrow
+end
+
+local function rotatePoint(point, center, angle)
+	local s, c = math.sin(angle), math.cos(angle)
+	local x = point.X - center.X
+	local y = point.Y - center.Y
+	return Vector2.new(x * c - y * s + center.X, x * s + y * c + center.Y)
+end
+
+local function drawArrow(arrow, position, rotation, color)
+	local bodyLength = 10
+	local tipSize = 6
+	local bodyStart = rotatePoint(Vector2.new(position.X, position.Y + bodyLength / 2), position, rotation)
+	local bodyEnd   = rotatePoint(Vector2.new(position.X, position.Y - bodyLength / 2 + tipSize / 2), position, rotation)
+	arrow.body.From = bodyStart
+	arrow.body.To   = bodyEnd
+	arrow.body.Color = color
+	arrow.body.Visible = true
+	local tipTop   = rotatePoint(Vector2.new(position.X, position.Y - bodyLength / 2 - tipSize / 2), position, rotation)
+	local tipLeft  = rotatePoint(Vector2.new(position.X - tipSize / 2, position.Y - bodyLength / 2 + tipSize / 2), position, rotation)
+	local tipRight = rotatePoint(Vector2.new(position.X + tipSize / 2, position.Y - bodyLength / 2 + tipSize / 2), position, rotation)
+	arrow.tip.PointA = tipTop
+	arrow.tip.PointB = tipLeft
+	arrow.tip.PointC = tipRight
+	arrow.tip.Color = color
+	arrow.tip.Visible = true
+end
+
+local guiInset = game:GetService("GuiService"):GetGuiInset()
+
+local function updateFOVCircle()
+	circle.Position = Vector2.new(mouse.X, mouse.Y + guiInset.Y)
+	circle.Radius = getgenv().ARCHNEM.silent.Settings.Visuals.FOVRadius
+	circle.Transparency = getgenv().ARCHNEM.silent.Settings.Visuals.FOVTransparency
+	circle.Visible = getgenv().ARCHNEM.silent.Settings.Visuals.FOVVisible
+end
+
+local function updateAimbotFOV()
+	aimbotFOVCircle.Position = Vector2.new(mouse.X, mouse.Y + guiInset.Y)
+	aimbotFOVCircle.Radius = getgenv().ARCHNEM.aimbot.Settings.FOV.Radius
+	aimbotFOVCircle.Transparency = getgenv().ARCHNEM.aimbot.Settings.FOV.Transparency
+	aimbotFOVCircle.Visible = getgenv().ARCHNEM.aimbot.Settings.FOV.Visible
+end
+
+local function updateRadar()
+	_radarFrame = _radarFrame + 1
+	if _radarFrame < 3 then return end
+	_radarFrame = 0
+	local radarConfig = getgenv().ARCHNEM.misc.Radar
+	local radarEnabled = radarConfig.Enabled
+	local radarSize = radarConfig.Size
+	local radarRadius = radarSize / 2
+	local radarPos = Vector2.new(radarConfig.Position[1] + radarRadius, radarConfig.Position[2] + radarRadius)
+	radarBackground.Position = radarPos; radarBackground.Radius = radarRadius; radarBackground.Visible = radarEnabled;
+	radarCircle.Position = radarPos; radarCircle.Radius = radarRadius; radarCircle.Visible = radarEnabled;
+	radarLocalDot.Position = radarPos; radarLocalDot.Visible = radarEnabled;
+	if radarLabels[1] then
+		radarLabels[1].Position = Vector2.new(radarPos.X, radarPos.Y - radarRadius - 15); radarLabels[1].Visible = radarEnabled;
+		radarLabels[2].Position = Vector2.new(radarPos.X + radarRadius + 15, radarPos.Y); radarLabels[2].Visible = radarEnabled;
+		radarLabels[3].Position = Vector2.new(radarPos.X, radarPos.Y + radarRadius + 15); radarLabels[3].Visible = radarEnabled;
+		radarLabels[4].Position = Vector2.new(radarPos.X - radarRadius - 15, radarPos.Y); radarLabels[4].Visible = radarEnabled;
+	end
+	if not radarEnabled then
+		for _, arrow in pairs(radarArrows) do arrow.body.Visible = false; arrow.tip.Visible = false; end
+		return
+	end
+	local localChar = client.Character
+	if not localChar then return end
+	local localRoot = localChar:FindFirstChild("HumanoidRootPart")
+	if not localRoot then return end
+	local arrowIndex = 1
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player == client then continue end
+		local char = player.Character
+		if not char then continue end
+		local root = char:FindFirstChild("HumanoidRootPart")
+		if not root then continue end
+		local distance = (localRoot.Position - root.Position).Magnitude
+		if distance > radarConfig.Distance then continue end
+		local relativePos = localRoot.CFrame:PointToObjectSpace(root.Position)
+		local scale = radarRadius / radarConfig.Distance
+		local dotX = radarPos.X + relativePos.X * scale
+		local dotY = radarPos.Y + relativePos.Z * scale
+		if math.sqrt((relativePos.X * scale)^2 + (relativePos.Z * scale)^2) > radarRadius then continue end
+		if not radarArrows[arrowIndex] then radarArrows[arrowIndex] = createArrow() end
+		local arrow = radarArrows[arrowIndex]
+		local lookVector = root.CFrame.LookVector
+		local localLookVector = localRoot.CFrame.LookVector
+		local relativeAngle = math.atan2(lookVector.X, lookVector.Z) - math.atan2(localLookVector.X, localLookVector.Z)
+		local color
+		if radarConfig.Friends and client:IsFriendsWith(player.UserId) then color = Color3.fromRGB(0, 255, 0)
+		else color = Color3.fromRGB(85, 122, 255) end
+		drawArrow(arrow, Vector2.new(dotX, dotY), relativeAngle, color)
+		arrowIndex = arrowIndex + 1
+	end
+	for i = arrowIndex, #radarArrows do radarArrows[i].body.Visible = false; radarArrows[i].tip.Visible = false; end
+end
+
+local _rayParams = RaycastParams.new()
+_rayParams.FilterType = Enum.RaycastFilterType.Exclude
+_rayParams.IgnoreWater = true
+
+local function rayCastCheck(targetPart, targetCharacter)
+	_rayParams.FilterDescendantsInstances = {client.Character, targetCharacter}
+	local origin = camera.CFrame.Position
+	local direction = targetPart.Position - origin
+	local result = workspace:Raycast(origin, direction, _rayParams)
+	return result == nil
+end
+
+local function getPlayerPriority(player)
+	if not player then return "Neutral" end
+	local success, priority = true, "Neutral"
+	if success and priority then return priority end
+	return "Neutral"
+end
+
+local function canTargetPlayer(player)
+	if not player or player == client then return false end
+	local priority = getPlayerPriority(player)
+	if priority == "Friendly" then return false end
+	local hasEnemies = false
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= client and getPlayerPriority(p) == "Enemy" then hasEnemies = true; break; end
+	end
+	if hasEnemies then return priority == "Enemy" end
+	return priority == "Neutral"
+end
+
+local function isPartValid(part) return part and part:IsA("BasePart") end
+
+local function isPartOnScreen(part)
+	local _, onScreen = camera:WorldToScreenPoint(part.Position)
+	return onScreen
+end
+
+local function getMagnitudeFromMouse(part)
+	local screenPos = camera:WorldToScreenPoint(part.Position)
+	return (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+end
+
+local function getClosestBodyPart(character)
+	local distance = math.huge
+	local closestPart = nil
+	if not (character and character:IsA("Model")) then return nil end
+	for _, part in pairs(character:GetChildren()) do
+		if isPartValid(part) and isPartOnScreen(part) then
+			local magnitude = getMagnitudeFromMouse(part)
+			if magnitude < distance then closestPart = part; distance = magnitude; end
+		end
+	end
+	return closestPart
+end
+
+local function isPlayerKO(player)
+	if not player or not player.Character then return true end
+	local humanoid = player.Character:FindFirstChild("Humanoid")
+	if not humanoid or humanoid.Health <= 0 then return true end
+	if getgenv().ARCHNEM.aimbot.Settings.KnockCheck then
+		local bodyEffects = player.Character:FindFirstChild("BodyEffects")
+		if bodyEffects then
+			local koCheck = bodyEffects:FindFirstChild("K.O")
+			if koCheck and koCheck.Value then return true end
+		end
+		if player.Character:FindFirstChild("GRABBING_CONSTRAINT") then return true end
+	end
+	return false
+end
+
+local function getNearestPlayerInAimbotFOV()
+	local minDistance = getgenv().ARCHNEM.aimbot.Settings.FOV.Radius
+	local closest = nil
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player == client then continue end
+		if not canTargetPlayer(player) then continue end
+		if isPlayerKO(player) then continue end
+		if getgenv().ARCHNEM.aimbot.Settings.CheckIfTargetDead then
+			local char = player.Character
+			if char then
+				local hum = char:FindFirstChild("Humanoid")
+				if hum and hum.Health < 4 then continue end
+			end
+		end
+		local char = player.Character
+		if not char then continue end
+		local part = char:FindFirstChild(getgenv().ARCHNEM.aimbot.Settings.Part)
+		if not part then continue end
+		if getgenv().ARCHNEM.aimbot.Settings.WallCheck and not rayCastCheck(part, char) then continue end
+		local screenPos, onScreen = camera:WorldToScreenPoint(part.Position)
+		if not onScreen then continue end
+		local dist = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+		if dist < minDistance then minDistance = dist; closest = player; end
+	end
+	return closest
+end
+
+local function getNearestPlayerInFOV()
+	local minDistance = getgenv().ARCHNEM.silent.Settings.Visuals.FOVRadius
+	local closest = nil
+	for _, player in ipairs(Players:GetPlayers()) do
+		if player == client then continue end
+		if not canTargetPlayer(player) then continue end
+		if isPlayerKO(player) then continue end
+		local char = player.Character
+		if not char then continue end
+		local part = char:FindFirstChild(getgenv().ARCHNEM.silent.Settings.Part)
+		if not part then continue end
+		if getgenv().ARCHNEM.aimbot.Settings.WallCheck and not rayCastCheck(part, char) then continue end
+		local screenPos, onScreen = camera:WorldToViewportPoint(part.Position)
+		if not onScreen then continue end
+		local dist = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+		if dist < minDistance then minDistance = dist; closest = player; end
+	end
+	return closest
+end
+
+local function applyWalkspeed()
+	if client.Character then
+		local humanoid = client.Character:FindFirstChild("Humanoid")
+		if humanoid then humanoid.WalkSpeed = getgenv().ARCHNEM.misc.Walkspeed.Speed end
+	end
+end
+
+local inputConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+
+	if input.KeyCode == getgenv().ARCHNEM.aimbot.Settings.Key then
+		local keyMode = getgenv().ARCHNEM.aimbot.Settings.KeyMode
+		if keyMode == "Hold" then
+			local targetInFOV = getNearestPlayerInAimbotFOV()
+			if targetInFOV then aimbotActive = true; aimbotTarget = targetInFOV; end
+		else
+			if aimbotActive then aimbotActive = false; aimbotTarget = nil;
+			else
+				local targetInFOV = getNearestPlayerInAimbotFOV()
+				if targetInFOV then aimbotActive = true; aimbotTarget = targetInFOV; end
+			end
+		end
+	end
+
+	if input.KeyCode == Enum.KeyCode[getgenv().ARCHNEM.aimbot.Configuration.FrameSkip.KeyBind:upper()] then
+		getgenv().ARCHNEM.aimbot.Configuration.FrameSkip.Enabled = not getgenv().ARCHNEM.aimbot.Configuration.FrameSkip.Enabled
+	end
+
+	if input.KeyCode == getgenv().ARCHNEM.misc.Walkspeed.Key then
+		if not getgenv().ARCHNEM.misc.Walkspeed.Enabled then return end
+		getgenv().ARCHNEM.misc.Walkspeed.Active = not getgenv().ARCHNEM.misc.Walkspeed.Active
+		if getgenv().ARCHNEM.misc.Walkspeed.Active then applyWalkspeed()
+		else
+			if client.Character then
+				local humanoid = client.Character:FindFirstChild("Humanoid")
+				if humanoid then humanoid.WalkSpeed = 16 end
+			end
+		end
+	end
+
+	if input.KeyCode == getgenv().ARCHNEM.Key360.Keybind then
+		Toggle360 = not Toggle360
+		if not Toggle360 then TotalRotation360 = 0 end
+	end
+
+	if input.KeyCode == getgenv().ARCHNEM.misc.Macro.Key then
+		if not getgenv().ARCHNEM.misc.Macro.Enabled then return end
+		MacroEnabled = not MacroEnabled
+		if MacroEnabled then
+			task.spawn(function()
+				while MacroEnabled and getgenv().ARCHNEM.misc.Macro.Enabled do
+					RunService.Heartbeat:Wait()
+					local vim = game:GetService("VirtualInputManager"); if vim then vim["SendMouseWheelEvent"](vim, 0, 0, true, game) end
+					RunService.Heartbeat:Wait()
+					local vim = game:GetService("VirtualInputManager"); if vim then vim["SendMouseWheelEvent"](vim, 0, 0, false, game) end
+					RunService.Heartbeat:Wait()
+				end
+			end)
+		end
+	end
+end)
+getgenv().__ARCHNEM_RUNTIME.inputConn = inputConn
+
+local inputEndedConn = UserInputService.InputEnded:Connect(function(input, gameProcessed)
+	if input.KeyCode == getgenv().ARCHNEM.aimbot.Settings.Key then
+		if getgenv().ARCHNEM.aimbot.Settings.KeyMode == "Hold" then
+			aimbotActive = false
+			aimbotTarget = nil
+		end
+	end
+end)
+getgenv().__ARCHNEM_RUNTIME.inputEndedConn = inputEndedConn
+
+local renderConn = RunService.RenderStepped:Connect(function(dt)
+
+	if getgenv().ARCHNEM.aimbot.Settings.UnlockOnOwnDeath and client.Character then
+		local bodyEffects = client.Character:FindFirstChild("BodyEffects")
+		if bodyEffects then
+			local koValue = bodyEffects:FindFirstChild("K.O")
+			if koValue and koValue.Value then aimbotActive = false; aimbotTarget = nil; end
+		end
+	end
+
+	if getgenv().ARCHNEM.aimbot.Settings.Enabled and aimbotActive then
+		if isPlayerKO(aimbotTarget) then aimbotActive = false; aimbotTarget = nil; end
+
+		if aimbotTarget and aimbotTarget.Character then
+			local settings = getgenv().ARCHNEM.aimbot.Settings
+			local configuration = getgenv().ARCHNEM.aimbot.Configuration
+			local part = aimbotTarget.Character:FindFirstChild(settings.Part)
+
+			if not part then
+				aimbotActive = false
+				aimbotTarget = nil
+			else
+				local pos = part.Position
+
+				if configuration.Prediction.Enabled and part.Velocity.Magnitude > 0.1 then
+					local yVelocity = part.Velocity.Y
+					local velocity = part.Velocity
+					local predX = configuration.Prediction.New.X
+					local predNewY = configuration.Prediction.New.Y
+					if configuration.Prediction.JumpOffsetEnabled then
+						if yVelocity > 0 then predNewY = configuration.Prediction.New.YJump or predNewY
+						elseif yVelocity < -2 then predNewY = configuration.Prediction.New.YFall or predNewY end
+					end
+					pos = pos + Vector3.new(velocity.X / predX, velocity.Y / predNewY, velocity.Z / predX)
+				end
+
+				if configuration.Shake[1] then
+					pos = pos + Vector3.new(
+						math.random(-configuration.Shake[2], configuration.Shake[2]),
+						math.random(-configuration.Shake[3], configuration.Shake[3]),
+						math.random(-configuration.Shake[4], configuration.Shake[4])
+					)
+				end
+
+				local currentCamPos = camera.CFrame.Position
+
+				local finalPos = pos
+					+ camera.CFrame.RightVector * (configuration.Offset and configuration.Offset.X or 0)
+					+ camera.CFrame.UpVector   * (configuration.Offset and configuration.Offset.Y or 0)
+
+				if configuration.PullResistance.Enabled then
+					local resistStrength = configuration.PullResistance.Strength
+					local currentLook = camera.CFrame.LookVector
+					local toTarget = (finalPos - currentCamPos).Unit
+					local mouseSpeed = mouseDelta.Magnitude
+					local dynamicResist = resistStrength
+					if mouseMoving and mouseSpeed > 1 then dynamicResist = math.min(1, resistStrength + (mouseSpeed / 100))
+					elseif not mouseMoving then dynamicResist = math.max(0, resistStrength - 0.3) end
+					local resistedDirection = currentLook:Lerp(toTarget, 1 - dynamicResist).Unit
+					finalPos = currentCamPos + resistedDirection * (finalPos - currentCamPos).Magnitude
+				end
+
+				local goalCFrame = CFrame.new(currentCamPos, finalPos)
+
+				local spam = configuration.Spam or { Enabled = false, Amount = 0 }
+				local skipFrame = false
+				if spam.Enabled then
+					local dir = (finalPos - currentCamPos).Unit
+					local dot = camera.CFrame.LookVector:Dot(dir)
+					local angleDiff = math.acos(math.clamp(dot, -1, 1))
+					if angleDiff <= math.rad(spam.Amount) then skipFrame = true end
+				end
+
+				if not skipFrame then
+					if configuration.FrameSkip.Enabled then
+						camera.CFrame = CFrame.new(currentCamPos, finalPos)
+						configuration.FrameSkip.Enabled = false
+					else
+						local easingMode = settings.Easing
+						local currentCF = camera.CFrame
+
+						if configuration.Smooth.Enabled then
+							local targetLook  = goalCFrame.LookVector
+							local currentLook = currentCF.LookVector
+							local horizontalTarget  = Vector3.new(targetLook.X,  0, targetLook.Z).Unit
+							local horizontalCurrent = Vector3.new(currentLook.X, 0, currentLook.Z).Unit
+							local smoothX = configuration.Smooth.X
+							local smoothY = configuration.Smooth.Y
+
+							if easingMode == "Delta2" then smoothX = Delta2Easing(smoothX); smoothY = Delta2Easing(smoothY);
+							elseif easingMode == "Adaptive" then smoothX = AdaptiveEasing(smoothX, 1); smoothY = AdaptiveEasing(smoothY, 1);
+							elseif easingMode == "Custom" then smoothX = CustomEasing(smoothX); smoothY = CustomEasing(smoothY);
+							elseif easingMode == "Exit" then smoothX = exitEasing(smoothX); smoothY = exitEasing(smoothY); end
+
+							local newHorizontal = horizontalCurrent:Lerp(horizontalTarget, smoothX)
+							local verticalDiff  = targetLook.Y - currentLook.Y
+							local newVertical   = currentLook.Y + verticalDiff * smoothY
+							local magnitude     = math.sqrt(math.max(0, 1 - newVertical * newVertical))
+							local newLook       = (newHorizontal * magnitude + Vector3.new(0, newVertical, 0)).Unit
+
+							if configuration.CamSmooth.Enabled then
+								local camSX = configuration.CamSmooth.X
+								local camSY = configuration.CamSmooth.Y
+								local blendedLook = currentLook:Lerp(newLook, math.clamp((camSX + camSY) * 0.5, 0.01, 1))
+								camera.CFrame = CFrame.new(currentCamPos, currentCamPos + blendedLook)
+							else
+								camera.CFrame = CFrame.new(currentCamPos, currentCamPos + newLook)
+							end
+						else
+							if configuration.CamSmooth.Enabled then
+								local camSX = configuration.CamSmooth.X
+								local camSY = configuration.CamSmooth.Y
+								local alpha = math.clamp((camSX + camSY) * 0.5, 0.01, 1)
+								local lerpedCF = currentCF:Lerp(goalCFrame, alpha)
+								camera.CFrame = CFrame.new(currentCamPos, currentCamPos + lerpedCF.LookVector)
+							else
+								camera.CFrame = CFrame.new(currentCamPos, finalPos)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
+
+	if Toggle360 and getgenv().ARCHNEM.Key360.Toggle then
+		local CurrentTime = tick()
+		local TimeDelta = math.min(CurrentTime - LastRenderTime360, 0.01)
+		LastRenderTime360 = CurrentTime
+		local Rotation = CFrame.fromAxisAngle(Vector3.new(0, 1, 0), math.rad(getgenv().ARCHNEM.Key360.RotationSpeed * TimeDelta))
+		camera.CFrame = camera.CFrame * Rotation
+		TotalRotation360 = TotalRotation360 + math.rad(getgenv().ARCHNEM.Key360.RotationSpeed * TimeDelta)
+		if TotalRotation360 >= FullCircleRotation then Toggle360 = false; TotalRotation360 = 0; end
+	end
+
+	updateFOVCircle()
+	updateAimbotFOV()
+	updateRadar()
+
+	if getgenv().ARCHNEM.misc.Walkspeed.Enabled and getgenv().ARCHNEM.misc.Walkspeed.Active then
+		applyWalkspeed()
+	end
+end)
+getgenv().__ARCHNEM_RUNTIME.renderConn = renderConn
+
+local antiVoidHeartbeat = RunService.Heartbeat:Connect(function()
+	if not getgenv().ARCHNEM.misc.AntiVoid.Enabled then return end
+	local char = client.Character
+	if not char then return end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if hrp and hrp.Position.Y > getgenv().ARCHNEM.misc.AntiVoid.VoidThreshold + getgenv().ARCHNEM.misc.AntiVoid.CheckOffset then
+		getgenv().ARCHNEM.misc.AntiVoid.SafePosition = hrp.Position
+	end
+end)
+getgenv().__ARCHNEM_RUNTIME.antiVoidHeartbeat = antiVoidHeartbeat
+
+local antiVoidStepped = RunService.Stepped:Connect(function()
+	if not getgenv().ARCHNEM.misc.AntiVoid.Enabled then return end
+	local char = client.Character
+	if not char then return end
+	local hrp = char:FindFirstChild("HumanoidRootPart")
+	if hrp and hrp.Position.Y < getgenv().ARCHNEM.misc.AntiVoid.VoidThreshold then
+		hrp.Velocity = Vector3.zero
+		hrp.CFrame = CFrame.new(getgenv().ARCHNEM.misc.AntiVoid.SafePosition + Vector3.new(0, getgenv().ARCHNEM.misc.AntiVoid.TeleportHeight, 0))
+	end
+end)
+getgenv().__ARCHNEM_RUNTIME.antiVoidStepped = antiVoidStepped
+
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+getgenv().__ARCHNEM_RUNTIME.prevMetatableIndex = mt.__index
+local raw_index = mt.__index
+
+local silentCache = {
+	lastUpdate = 0,
+	target = nil,
+	updateInterval = 0.05
+}
+
+mt.__index = function(self, key)
+	if getgenv().ARCHNEM.silent.Settings.General.Enabled and self == mouse and key == "Hit" then
+		local currentTime = tick()
+		if currentTime - silentCache.lastUpdate > silentCache.updateInterval then
+			local silentType = getgenv().ARCHNEM.silent.Settings.Type
+			if silentType == "Target" then silentCache.target = aimbotTarget
+			elseif silentType == "FOV" then silentCache.target = getNearestPlayerInFOV() end
+			silentCache.lastUpdate = currentTime
+		end
+		local char = silentCache.target and silentCache.target.Character
+		if char then
+			local partName = getgenv().ARCHNEM.silent.Settings.Part
+			local useClosestPart = getgenv().ARCHNEM.silent.Settings.ClosestPart
+			local part = useClosestPart and getClosestBodyPart(char) or char:FindFirstChild(partName)
+			if part then
+				local targetCFrame = part.CFrame
+				local predictionTable = getgenv().ARCHNEM.silent.Settings.General.Prediction
+				if predictionTable[1] and part.Velocity.Magnitude > 0.1 then
+					return targetCFrame + (part.Velocity * predictionTable[2])
+				else return targetCFrame end
+			end
+		end
+	end
+	return raw_index(self, key)
+end
+
+setreadonly(mt, true)
+
+local charConn = client.CharacterAdded:Connect(function(character)
+	task.wait(1)
+	updateHeadlessState(character)
+	if getgenv().ARCHNEM.misc.Korblox then applyKorblox(character) end
+	if getgenv().ARCHNEM.misc.SkinChanger.Enabled then task.delay(2, applySkinChanger) end
+	if getgenv().ARCHNEM.misc.BulletChanger.Enabled then
+		task.spawn(function()
+			for i = 1, 10 do task.wait(0.5); applyBulletChanger(); end
+		end)
+	end
+end)
+getgenv().__ARCHNEM_RUNTIME.charConn = charConn
+
+if client.Character then
+	task.wait(1)
+	updateHeadlessState(client.Character)
+end
+
+if getgenv().ARCHNEM.misc.SkinChanger.Enabled then task.wait(2); applySkinChanger(); end
+if getgenv().ARCHNEM.misc.BulletChanger.Enabled then
+	task.spawn(function()
+		for i = 1, 10 do task.wait(0.5); applyBulletChanger(); end
+	end)
+end
+
+
+-- ============================================================
+-- ESP SYSTEM
+-- ============================================================
+
+local espCache = {}
+
+local function createDrawing(class, properties)
+	local drawing = Drawing.new(class)
+	for k, v in pairs(properties) do drawing[k] = v end
+	return drawing
+end
+
+local function createEsp(player)
+	espCache[player] = {
+		boxOutline = createDrawing("Square", { Color = getgenv().ARCHNEM.esp.BoxOutlineColor, Thickness = 3, Filled = false }),
+		box = createDrawing("Square", { Color = getgenv().ARCHNEM.esp.BoxColor, Thickness = 1, Filled = false }),
+		filledBox = createDrawing("Square", { Color = getgenv().ARCHNEM.esp.FilledBoxColor, Thickness = 1, Transparency = 0.3, Filled = true }),
+		name = createDrawing("Text", { Color = getgenv().ARCHNEM.esp.NameColor, Outline = true, Center = true, Size = 13 }),
+		healthOutline = createDrawing("Line", { Thickness = 3, Color = getgenv().ARCHNEM.esp.HealthOutlineColor }),
+		health = createDrawing("Line", { Thickness = 1 }),
+		distance = createDrawing("Text", { Color = Color3.new(1, 1, 1), Size = 12, Outline = true, Center = true }),
+		boxLines = {},
+	}
+end
+
+local function isPlayerBehindWall(player)
+	local character = player.Character
+	if not character then return false end
+	local rootPart = character:FindFirstChild("HumanoidRootPart")
+	if not rootPart then return false end
+	local params = RaycastParams.new()
+	params.FilterDescendantsInstances = {client.Character, character}
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.IgnoreWater = true
+	local result = workspace:Raycast(camera.CFrame.Position, (rootPart.Position - camera.CFrame.Position), params)
+	return result ~= nil
+end
+
+local function removeEsp(player)
+	local esp = espCache[player]
+	if not esp then return end
+	for _, drawing in pairs(esp) do
+		if type(drawing) == "table" then
+			for _, d in pairs(drawing) do if d and d.Remove then d:Remove() end end
+		elseif drawing and drawing.Remove then drawing:Remove() end
+	end
+	espCache[player] = nil
+end
+
+local function hideEsp(esp)
+	for _, drawing in pairs(esp) do
+		if type(drawing) ~= "table" then drawing.Visible = false end
+	end
+	for _, line in ipairs(esp.boxLines) do line:Remove() end
+	esp.boxLines = {}
+end
+
+local function lerp(a, b, t) return a + (b - a) * t end
+
+local _healthLerp = {}
+
+local function updateEsp()
+	_espFrame = _espFrame + 1
+	if _espFrame < 3 then return end
+	_espFrame = 0
+	local espConfig = getgenv().ARCHNEM.esp
+	if not espConfig.Enabled then
+		for _, esp in pairs(espCache) do hideEsp(esp) end
+		return
+	end
+	for player, esp in pairs(espCache) do
+		local character = player.Character
+		if not character then hideEsp(esp); continue; end
+		if espConfig.Teamcheck and player.Team and player.Team == client.Team then hideEsp(esp); continue; end
+		if espConfig.WallCheck and isPlayerBehindWall(player) then hideEsp(esp); continue; end
+		local rootPart = character:FindFirstChild("HumanoidRootPart")
+		local head     = character:FindFirstChild("Head")
+		local humanoid = character:FindFirstChild("Humanoid")
+		if not (rootPart and head and humanoid) then hideEsp(esp); continue; end
+		local hrp2D, onScreen = camera:WorldToViewportPoint(rootPart.Position)
+		if not onScreen then hideEsp(esp); continue; end
+		local topY    = camera:WorldToViewportPoint(rootPart.Position + Vector3.new(0, 2.6, 0)).Y
+		local bottomY = camera:WorldToViewportPoint(rootPart.Position - Vector3.new(0, 3, 0)).Y
+		local charSize = (bottomY - topY) / 2
+		local boxSizeX = math.floor(charSize * 1.4)
+		local boxSizeY = math.floor(charSize * 1.9)
+		local boxPosX  = math.floor(hrp2D.X - charSize * 0.7)
+		local boxPosY  = math.floor(hrp2D.Y - charSize * 0.8)
+		local boxSize  = Vector2.new(boxSizeX, boxSizeY)
+		local boxPosition = Vector2.new(boxPosX, boxPosY)
+		if espConfig.ShowName then
+			esp.name.Visible = true
+			esp.name.Text = string.lower(player.Name)
+			esp.name.Position = Vector2.new(boxPosX + boxSizeX / 2, boxPosY - 16)
+			esp.name.Color = espConfig.NameColor
+		else esp.name.Visible = false end
+		if espConfig.ShowFilledBox then
+			esp.filledBox.Position = boxPosition; esp.filledBox.Size = boxSize;
+			esp.filledBox.Color = espConfig.FilledBoxColor; esp.filledBox.Visible = true;
+		else esp.filledBox.Visible = false end
+		if espConfig.ShowBox then
+			local priority = getPlayerPriority(player)
+			local boxColor
+			if priority == "Friendly" then boxColor = Color3.fromRGB(0, 255, 0)
+			elseif priority == "Enemy" then boxColor = Color3.fromRGB(255, 0, 0)
+			else boxColor = espConfig.BoxColor end
+			if espConfig.BoxType == "Normal" then
+				esp.boxOutline.Size = boxSize; esp.boxOutline.Position = boxPosition;
+				esp.box.Size = boxSize; esp.box.Position = boxPosition;
+				esp.box.Color = boxColor; esp.box.Visible = true; esp.boxOutline.Visible = true;
+				for _, line in ipairs(esp.boxLines) do line:Remove() end; esp.boxLines = {};
+			elseif espConfig.BoxType == "Corner" then
+				local lineW = boxSizeX / 3; local lineH = boxSizeY / 3;
+				if #esp.boxLines == 0 then
+					for i = 1, 16 do esp.boxLines[i] = createDrawing("Line", { Thickness = 1, Color = espConfig.BoxColor, Transparency = 1 }) end
+				end
+				local bl = esp.boxLines
+				for i = 1, 8 do bl[i].Thickness = 2; bl[i].Color = espConfig.BoxOutlineColor; bl[i].Transparency = 1; end
+				bl[1].From = Vector2.new(boxPosX, boxPosY); bl[1].To = Vector2.new(boxPosX, boxPosY + lineH);
+				bl[2].From = Vector2.new(boxPosX, boxPosY); bl[2].To = Vector2.new(boxPosX + lineW, boxPosY);
+				bl[3].From = Vector2.new(boxPosX + boxSizeX - lineW, boxPosY); bl[3].To = Vector2.new(boxPosX + boxSizeX, boxPosY);
+				bl[4].From = Vector2.new(boxPosX + boxSizeX, boxPosY); bl[4].To = Vector2.new(boxPosX + boxSizeX, boxPosY + lineH);
+				bl[5].From = Vector2.new(boxPosX, boxPosY + boxSizeY - lineH); bl[5].To = Vector2.new(boxPosX, boxPosY + boxSizeY);
+				bl[6].From = Vector2.new(boxPosX, boxPosY + boxSizeY); bl[6].To = Vector2.new(boxPosX + lineW, boxPosY + boxSizeY);
+				bl[7].From = Vector2.new(boxPosX + boxSizeX - lineW, boxPosY + boxSizeY); bl[7].To = Vector2.new(boxPosX + boxSizeX, boxPosY + boxSizeY);
+				bl[8].From = Vector2.new(boxPosX + boxSizeX, boxPosY + boxSizeY - lineH); bl[8].To = Vector2.new(boxPosX + boxSizeX, boxPosY + boxSizeY);
+				for i = 9, 16 do bl[i].From = bl[i-8].From; bl[i].To = bl[i-8].To; bl[i].Color = boxColor; end
+				for _, line in ipairs(bl) do line.Visible = true end
+				esp.box.Visible = false; esp.boxOutline.Visible = false;
+			end
+		else
+			esp.box.Visible = false; esp.boxOutline.Visible = false;
+			for _, line in ipairs(esp.boxLines) do line:Remove() end; esp.boxLines = {};
+		end
+		if espConfig.ShowHealth then
+			if not _healthLerp[player] then _healthLerp[player] = humanoid.Health end
+			local health
+			if espConfig.AnimatedHealthBars then
+				_healthLerp[player] = lerp(_healthLerp[player], humanoid.Health, 0.3)
+				health = _healthLerp[player]
+			else health = humanoid.Health end
+			local healthPercentage = health / math.max(humanoid.MaxHealth, 1)
+			local healthBarHeight  = healthPercentage * boxSizeY
+			esp.healthOutline.From = Vector2.new(boxPosX - 6, boxPosY + boxSizeY + 1)
+			esp.healthOutline.To   = Vector2.new(boxPosX - 6, boxPosY - 1)
+			esp.health.From        = Vector2.new(boxPosX - 6, boxPosY + boxSizeY)
+			esp.health.To          = Vector2.new(boxPosX - 6, boxPosY + boxSizeY - healthBarHeight + 1)
+			esp.health.Color       = espConfig.HealthBasedColor and espConfig.HealthLowColor:Lerp(espConfig.HealthHighColor, healthPercentage) or espConfig.HealthColor
+			esp.healthOutline.Visible = true; esp.health.Visible = true;
+		else
+			esp.healthOutline.Visible = false; esp.health.Visible = false; _healthLerp[player] = nil;
+		end
+		if espConfig.ShowDistance and client.Character and client.Character:FindFirstChild("HumanoidRootPart") then
+			local distance = (client.Character.HumanoidRootPart.Position - rootPart.Position).Magnitude
+			esp.distance.Text = string.format("%.1f studs", distance)
+			esp.distance.Position = Vector2.new(boxPosX + boxSizeX / 2, boxPosY + boxSizeY + 5)
+			esp.distance.Color = espConfig.DistanceColor; esp.distance.Visible = true;
+		else esp.distance.Visible = false end
+	end
+end
+
+for _, player in ipairs(Players:GetPlayers()) do
+	if player ~= client then createEsp(player) end
+end
+
+Players.PlayerAdded:Connect(function(player)
+	if player ~= client then createEsp(player) end
+end)
+
+Players.PlayerRemoving:Connect(function(player)
+	removeEsp(player)
+	_healthLerp[player] = nil
+end)
+
+local espRenderConn = RunService.RenderStepped:Connect(updateEsp)
+getgenv().__ARCHNEM_RUNTIME.espRenderConn = espRenderConn
+
+-- ==============================================================================
+-- ==============================================================================
+-- WEATHER VISUALS ENGINE (Rain Stripes / Streaks Overhaul v3)
+-- Чёткий дождь выразительными параллельными полосками (высокая контрастность)
+-- ==============================================================================
+pcall(function()
+local Weather = {}
+local WCFG = function() return getgenv().ARCHNEM.weather end
+
+-- встроенные текстуры движка
+local TEX_DROP  = "rbxasset://textures/particles/sparkles_main.dds"   -- вытянутые капли-полосы
+local TEX_SOFT  = "rbxasset://textures/particles/smoke_main.dds"      -- брызги, туман, снег
+local TEX_SMOKE = "rbxasset://textures/particles/smoke_main.dds"
+
+local folder, rig, rigMid, rigFar, boltFolder, impactFolder, dropFolder, flashLight, cc, rainCC, thunderSound, rainSound
+local splashPart, mistPart, ripplePart
+local emitters = {}
+local groundEffects = {}
+local syncDrops = {}
+local syncImpactTimer = 0
+local fallbackImpactTimer = 0
+local impactAccumulator = 0
+local MAX_GROUND_IMPACTS = 5
+local SYNC_DROP_COUNT = 6
+-- Лужи: долгоживущие мокрые пятна, которые растекаются и медленно высыхают
+local puddles = {}
+local MAX_PUDDLES = 10
+local groundFXWarned = false
+local origFog = { Color = Lighting.FogColor, Start = Lighting.FogStart, End = Lighting.FogEnd }
+local nextStrike, flash, tAcc = 0, 0, 0
+local groundUpdateAccumulator = 0
+local active = {} -- активный пресет; заполняется после объявления PRESETS
+
+-- ─── helpers ────────────────────────────────────────────────────────────────
+
+local function newPart(name, parent)
+	local p = Instance.new("Part")
+	p.Name = name
+	p.Anchored = true
+	p.CanCollide = false
+	p.Locked = true
+	p.Transparency = 1
+	p.Massless = true
+	pcall(function() p.CanQuery = false end)
+	pcall(function() p.CanTouch = false end)
+	p.Parent = parent
+	return p
+end
+
+-- Камера может быть nil при старте скрипта или замениться при респауне.
+-- Всегда берём актуальную CurrentCamera в момент использования.
+local function resolveCamera()
+	local current = workspace.CurrentCamera
+	if current then camera = current end
+	return camera
+end
+
+local function ensureRig()
+	if folder and folder.Parent then return true end
+	local cam = resolveCamera()
+	if not cam then return false end
+	folder = Instance.new("Folder")
+	folder.Name = "ARCHNEM_Weather"
+	folder.Parent = camera
+
+	rig = newPart("RigNear", folder)
+	rig.Size = Vector3.new(1, 1, 1)
+
+	rigMid = newPart("RigMid", folder)
+	rigMid.Size = Vector3.new(1, 1, 1)
+
+	rigFar = newPart("RigFar", folder)
+	rigFar.Size = Vector3.new(1, 1, 1)
+
+	boltFolder = Instance.new("Folder")
+	boltFolder.Name = "Bolts"
+	boltFolder.Parent = folder
+
+	impactFolder = Instance.new("Folder")
+	impactFolder.Name = "GroundImpacts"
+	impactFolder.Parent = folder
+
+	dropFolder = Instance.new("Folder")
+	dropFolder.Name = "SynchronizedRainDrops"
+	dropFolder.Parent = folder
+
+	-- Папка пересоздана: старые объекты из пула больше не валидны
+	if getgenv().__ARCHNEM_WEATHER_RESETPOOL then
+		pcall(getgenv().__ARCHNEM_WEATHER_RESETPOOL)
+	end
+
+	thunderSound = Instance.new("Sound")
+	thunderSound.Name = "Thunder"
+	thunderSound.SoundId = "rbxassetid://1837730859"
+	thunderSound.Volume = 1
+	thunderSound.RollOffMaxDistance = 10000
+	pcall(function() thunderSound.RollOffMode = Enum.RollOffMode.Linear end)
+	thunderSound.Parent = rig
+
+	rainSound = Instance.new("Sound")
+	rainSound.Name = "RainAmbient"
+	rainSound.SoundId = "rbxassetid://525368761"
+	rainSound.Volume = 0
+	rainSound.Looped = true
+	rainSound.RollOffMaxDistance = 10000
+	pcall(function() rainSound.RollOffMode = Enum.RollOffMode.Linear end)
+	rainSound.Parent = rig
+
+	flashLight = Instance.new("PointLight")
+	flashLight.Range = 60
+	flashLight.Brightness = 0
+	flashLight.Enabled = false
+	flashLight.Color = Color3.fromRGB(210, 225, 255)
+	flashLight.Parent = rig
+
+	pcall(function()
+		cc = Instance.new("ColorCorrectionEffect")
+		cc.Name = "ARCHNEM_Flash"
+		cc.Brightness = 0
+		cc.Contrast = 0
+		cc.Saturation = 0
+		cc.Enabled = false
+		cc.Parent = Lighting
+	end)
+
+	pcall(function()
+		rainCC = Instance.new("ColorCorrectionEffect")
+		rainCC.Name = "ARCHNEM_RainMood"
+		rainCC.Brightness = -0.06
+		rainCC.Contrast = 0.10
+		rainCC.Saturation = -0.15
+		rainCC.TintColor = Color3.fromRGB(185, 205, 230)
+		rainCC.Enabled = false
+		rainCC.Parent = Lighting
+	end)
+	return true
+end
+
+-- ─── emitter factories ──────────────────────────────────────────────────────
+
+local function baseEmitter(kind)
+	local e = Instance.new("ParticleEmitter")
+	e.Name = "W_" .. kind
+	e.Enabled = false
+	e.LockedToPart = false
+	e.Rate = 0
+	pcall(function() e.Shape = Enum.ParticleEmitterShape.Box end)
+	pcall(function() e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume end)
+	pcall(function() e.ShapeInOut = Enum.ParticleEmitterShapeInOut.Outward end)
+	e.Parent = rig
+
+	if kind == "RainFront" then
+		-- ПЕРЕДНИЙ СЛОЙ: хорошо заметные капли, падающие прямо перед камерой
+		e.Texture = TEX_DROP
+		e.Size = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0.55),
+			NumberSequenceKeypoint.new(0.05, 0.70),
+			NumberSequenceKeypoint.new(0.86, 0.58),
+			NumberSequenceKeypoint.new(1, 0)
+		}
+		e.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0.12),
+			NumberSequenceKeypoint.new(0.04, 0.0),
+			NumberSequenceKeypoint.new(0.9, 0.05),
+			NumberSequenceKeypoint.new(1, 1.0)
+		}
+		e.Color = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(228, 240, 250)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(190, 216, 238))
+		}
+		e.Lifetime = NumberRange.new(0.95, 1.25)
+		e.Speed = NumberRange.new(145, 195)
+		e.SpreadAngle = Vector2.new(0.2, 0.2)
+		e.Acceleration = Vector3.new(0, -62, 0)
+		e.LightEmission = 0
+		e.LightInfluence = 1
+		e.ZOffset = -5
+		e.EmissionDirection = Enum.NormalId.Bottom
+		e.Rotation = NumberRange.new(0, 0)
+		pcall(function() e.Orientation = Enum.ParticleOrientation.VelocityParallel end)
+		pcall(function() e.Squash = NumberSequence.new(-5.5) end)
+
+	elseif kind == "RainNear" then
+		-- БЛИЖНИЙ СЛОЙ: Крупные, сверхчёткие вытянутые полосы дождя (высокая видимость)
+		e.Texture = TEX_DROP
+		e.Size = NumberSequence.new(0.80)
+		e.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0.15),
+			NumberSequenceKeypoint.new(0.04, 0.0),
+			NumberSequenceKeypoint.new(0.88, 0.0),
+			NumberSequenceKeypoint.new(1, 1.0)
+		}
+		e.Color = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(224, 238, 250)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(196, 220, 240))
+		}
+		e.Lifetime = NumberRange.new(1.05, 1.40)
+		e.Speed = NumberRange.new(130, 178)
+		e.SpreadAngle = Vector2.new(0, 0)
+		e.Acceleration = Vector3.new(0, -54, 0)
+		e.LightEmission = 0
+		e.LightInfluence = 1
+		e.ZOffset = -3
+		e.EmissionDirection = Enum.NormalId.Bottom
+		e.Rotation = NumberRange.new(0, 0)
+		pcall(function() e.Orientation = Enum.ParticleOrientation.VelocityParallel end)
+		pcall(function() e.Squash = NumberSequence.new(-4.8) end)
+
+	elseif kind == "RainMid" then
+		-- СРЕДНИЙ СЛОЙ: Плотные чёткие полосы средней длины (основной массив)
+		e.Texture = TEX_DROP
+		e.Size = NumberSequence.new(0.62)
+		e.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0.2),
+			NumberSequenceKeypoint.new(0.05, 0.0),
+			NumberSequenceKeypoint.new(0.85, 0.0),
+			NumberSequenceKeypoint.new(1, 1.0)
+		}
+		e.Color = ColorSequence.new{
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(218, 234, 248)),
+			ColorSequenceKeypoint.new(1, Color3.fromRGB(188, 214, 236))
+		}
+		e.Lifetime = NumberRange.new(1.15, 1.55)
+		e.Speed = NumberRange.new(118, 162)
+		e.SpreadAngle = Vector2.new(0.5, 0.5)
+		e.Acceleration = Vector3.new(0, -46, 0)
+		e.LightEmission = 0
+		e.LightInfluence = 1
+		e.ZOffset = 0
+		e.EmissionDirection = Enum.NormalId.Bottom
+		e.Rotation = NumberRange.new(0, 0)
+		pcall(function() e.Orientation = Enum.ParticleOrientation.VelocityParallel end)
+		pcall(function() e.Squash = NumberSequence.new(-5.8) end)
+
+	elseif kind == "RainFar" then
+		-- ДАЛЬНИЙ СЛОЙ: Длинные тонкие фоновые нити дождя (глубина сцены)
+		e.Texture = TEX_DROP
+		e.Size = NumberSequence.new(0.45)
+		e.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0.25),
+			NumberSequenceKeypoint.new(0.08, 0.05),
+			NumberSequenceKeypoint.new(0.82, 0.08),
+			NumberSequenceKeypoint.new(1, 1.0)
+		}
+		e.Color = ColorSequence.new(Color3.fromRGB(200, 222, 240))
+		e.Lifetime = NumberRange.new(1.30, 1.75)
+		e.Speed = NumberRange.new(105, 148)
+		e.SpreadAngle = Vector2.new(1, 1)
+		e.Acceleration = Vector3.new(0, -40, 0)
+		e.LightEmission = 0
+		e.LightInfluence = 1
+		e.ZOffset = 4
+		e.EmissionDirection = Enum.NormalId.Bottom
+		pcall(function() e.Orientation = Enum.ParticleOrientation.VelocityParallel end)
+		pcall(function() e.Squash = NumberSequence.new(-6.8) end)
+
+	elseif kind == "Splash" then
+		-- ВСПЛЕСКИ: брызги при ударе полос о землю
+		e.Texture = TEX_DROP
+		e.Size = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0.18),
+			NumberSequenceKeypoint.new(0.3, 0.30),
+			NumberSequenceKeypoint.new(1, 0)
+		}
+		e.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(0.5, 0.25),
+			NumberSequenceKeypoint.new(1, 1)
+		}
+		e.Color = ColorSequence.new(Color3.fromRGB(205, 228, 244))
+		e.Lifetime = NumberRange.new(0.14, 0.28)
+		e.Speed = NumberRange.new(8, 16)
+		e.SpreadAngle = Vector2.new(55, 55)
+		e.Acceleration = Vector3.new(0, -95, 0)
+		e.LightEmission = 0
+		e.LightInfluence = 1
+		e.EmissionDirection = Enum.NormalId.Top
+		e.Rotation = NumberRange.new(0, 360)
+
+	elseif kind == "Ripple" then
+		-- RIPPLE: круговые волны на поверхности
+		e.Texture = TEX_SOFT
+		e.Size = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0.05),
+			NumberSequenceKeypoint.new(0.4, 0.45),
+			NumberSequenceKeypoint.new(1, 0.70)
+		}
+		e.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0.5),
+			NumberSequenceKeypoint.new(0.3, 0.65),
+			NumberSequenceKeypoint.new(1, 1)
+		}
+		e.Color = ColorSequence.new(Color3.fromRGB(198, 218, 238))
+		e.Lifetime = NumberRange.new(0.45, 0.75)
+		e.Speed = NumberRange.new(0, 0.4)
+		e.SpreadAngle = Vector2.new(0, 0)
+		e.Acceleration = Vector3.new(0, 0, 0)
+		e.LightEmission = 0
+		e.LightInfluence = 1
+		e.EmissionDirection = Enum.NormalId.Top
+		e.Rotation = NumberRange.new(0, 360)
+
+	elseif kind == "Mist" then
+		-- ТУМАН У ЗЕМЛИ: легкая влажная дымка
+		e.Texture = TEX_SOFT
+		e.Size = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 4),
+			NumberSequenceKeypoint.new(0.5, 8),
+			NumberSequenceKeypoint.new(1, 12)
+		}
+		e.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.2, 0.85),
+			NumberSequenceKeypoint.new(0.7, 0.88),
+			NumberSequenceKeypoint.new(1, 1)
+		}
+		e.Color = ColorSequence.new(Color3.fromRGB(180, 195, 215))
+		e.Lifetime = NumberRange.new(4, 7)
+		e.Speed = NumberRange.new(1, 4)
+		e.SpreadAngle = Vector2.new(180, 180)
+		e.RotSpeed = NumberRange.new(-8, 8)
+		e.Acceleration = Vector3.new(0, 0.3, 0)
+		e.LightEmission = 0.2
+		e.LightInfluence = 0.7
+		e.EmissionDirection = Enum.NormalId.Top
+		e.Drag = 0.5
+
+	elseif kind == "Snow" then
+		e.Texture = TEX_SOFT
+		e.Size = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 0.15),
+			NumberSequenceKeypoint.new(0.5, 0.28),
+			NumberSequenceKeypoint.new(1, 0.2)
+		}
+		e.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.07, 0.05),
+			NumberSequenceKeypoint.new(0.9, 0.12),
+			NumberSequenceKeypoint.new(1, 1)
+		}
+		e.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+		e.Lifetime = NumberRange.new(9, 15)
+		e.Speed = NumberRange.new(5, 11)
+		e.SpreadAngle = Vector2.new(28, 28)
+		e.RotSpeed = NumberRange.new(-35, 35)
+		e.Acceleration = Vector3.new(0, -1.2, 0)
+		e.Drag = 0.4
+		e.LightEmission = 1
+		e.LightInfluence = 0
+		e.ZOffset = -1
+		e.EmissionDirection = Enum.NormalId.Bottom
+
+	elseif kind == "SnowFar" then
+		e.Texture = TEX_SOFT
+		e.Size = NumberSequence.new(0.09)
+		e.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.1, 0.4),
+			NumberSequenceKeypoint.new(0.9, 0.45),
+			NumberSequenceKeypoint.new(1, 1)
+		}
+		e.Color = ColorSequence.new(Color3.fromRGB(240, 246, 255))
+		e.Lifetime = NumberRange.new(10, 16)
+		e.Speed = NumberRange.new(4, 9)
+		e.SpreadAngle = Vector2.new(40, 40)
+		e.RotSpeed = NumberRange.new(-25, 25)
+		e.Acceleration = Vector3.new(0, -1, 0)
+		e.LightEmission = 0.9
+		e.LightInfluence = 0.1
+		e.ZOffset = 3
+		e.EmissionDirection = Enum.NormalId.Bottom
+
+	else
+		-- Песчаная буря
+		e.Texture = TEX_SMOKE
+		e.Size = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 7),
+			NumberSequenceKeypoint.new(1, 18)
+		}
+		e.Transparency = NumberSequence.new{
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.2, 0.66),
+			NumberSequenceKeypoint.new(0.8, 0.72),
+			NumberSequenceKeypoint.new(1, 1)
+		}
+		e.Color = ColorSequence.new(Color3.fromRGB(176, 154, 126))
+		e.Lifetime = NumberRange.new(1.8, 3)
+		e.Speed = NumberRange.new(50, 75)
+		e.SpreadAngle = Vector2.new(20, 20)
+		e.RotSpeed = NumberRange.new(-25, 25)
+		e.LightEmission = 0.05
+		e.LightInfluence = 0.85
+		e.EmissionDirection = Enum.NormalId.Front
+	end
+	return e
+end
+
+local function ensureEmitters()
+	if not ensureRig() then return false end
+	for _, k in ipairs({"RainFront", "RainNear", "RainMid", "RainFar", "Snow", "SnowFar", "Sand", "Mist"}) do
+		if not emitters[k] or not emitters[k].Parent then
+			emitters[k] = baseEmitter(k)
+			if k == "RainMid" then emitters[k].Parent = rigMid end
+			if k == "RainFar" then emitters[k].Parent = rigFar end
+		end
+	end
+
+	if not splashPart or not splashPart.Parent then
+		splashPart = newPart("SplashPlane", folder)
+		splashPart.Size = Vector3.new(70, 0.2, 70)
+	end
+	if not emitters.Splash or not emitters.Splash.Parent then
+		local e = baseEmitter("Splash")
+		e.Parent = splashPart
+		pcall(function() e.Shape = Enum.ParticleEmitterShape.Box end)
+		pcall(function() e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume end)
+		emitters.Splash = e
+	end
+
+	if not ripplePart or not ripplePart.Parent then
+		ripplePart = newPart("RipplePlane", folder)
+		ripplePart.Size = Vector3.new(60, 0.1, 60)
+	end
+	if not emitters.Ripple or not emitters.Ripple.Parent then
+		local e = baseEmitter("Ripple")
+		e.Parent = ripplePart
+		pcall(function() e.Shape = Enum.ParticleEmitterShape.Box end)
+		pcall(function() e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface end)
+		emitters.Ripple = e
+	end
+
+	if not mistPart or not mistPart.Parent then
+		mistPart = newPart("MistPlane", folder)
+		mistPart.Size = Vector3.new(140, 0.2, 140)
+	end
+	if not emitters.Mist or not emitters.Mist.Parent then
+		emitters.Mist.Parent = mistPart
+	end
+	return true
+end
+
+-- ─── lightning bolts ────────────────────────────────────────────────────────
+
+local function spawnBolt()
+	if not boltFolder then return end
+	local origin = camera.CFrame.Position
+	local ang = math.random() * math.pi * 2
+	local dist = 130 + math.random() * 180
+	local top = origin + Vector3.new(math.cos(ang) * dist, 300 + math.random(0, 120), math.sin(ang) * dist)
+	local bottom = Vector3.new(top.X + math.random(-45, 45), origin.Y - 30, top.Z + math.random(-45, 45))
+	local prev, parts = top, {}
+
+	for k = 1, 12 do
+		local a = k / 12
+		local pt = top:Lerp(bottom, a)
+		local jitter = (1 - a) * 22
+		pt = pt + Vector3.new(math.random(-jitter, jitter), 0, math.random(-jitter, jitter))
+		if k == 12 then pt = bottom end
+		local p = newPart("Bolt", boltFolder)
+		p.Material = Enum.Material.Neon
+		p.Color = Color3.fromRGB(220, 235, 255)
+		p.Transparency = 0.05
+		local d = pt - prev
+		local thick = 1.2 * (1 - a * 0.6)
+		p.Size = Vector3.new(thick, thick, math.max(d.Magnitude, 0.1))
+		p.CFrame = CFrame.lookAt(prev + d * 0.5, pt)
+		table.insert(parts, p)
+		prev = pt
+
+		if k > 2 and k < 10 and math.random() < 0.15 then
+			local branchLen = math.random(3, 6)
+			local bprev = pt
+			for b = 1, branchLen do
+				local bpt = bprev + Vector3.new(
+					math.random(-25, 25),
+					-math.random(10, 30),
+					math.random(-25, 25)
+				)
+				local bp = newPart("Branch", boltFolder)
+				bp.Material = Enum.Material.Neon
+				bp.Color = Color3.fromRGB(200, 215, 245)
+				bp.Transparency = 0.2
+				local bd = bpt - bprev
+				local bthick = thick * 0.4
+				bp.Size = Vector3.new(bthick, bthick, math.max(bd.Magnitude, 0.1))
+				bp.CFrame = CFrame.lookAt(bprev + bd * 0.5, bpt)
+				table.insert(parts, bp)
+				bprev = bpt
+			end
+		end
+	end
+
+	task.spawn(function()
+		task.wait(0.04 + math.random() * 0.04)
+		for _, p in ipairs(parts) do pcall(function() p.Transparency = 0.02 end) end
+		task.wait(0.06)
+		for _, p in ipairs(parts) do
+			pcall(function()
+				TweenService:Create(p, TweenInfo.new(0.18), {Transparency = 0.85}):Play()
+			end)
+		end
+		task.wait(0.08)
+		if math.random() < 0.4 then
+			for _, p in ipairs(parts) do pcall(function() p.Transparency = 0.35 end) end
+			task.wait(0.05)
+		end
+		for _, p in ipairs(parts) do
+			pcall(function()
+				TweenService:Create(p, TweenInfo.new(0.25), {Transparency = 1}):Play()
+			end)
+		end
+		task.wait(0.4)
+		for _, p in ipairs(parts) do
+			if p and p.Parent then p:Destroy() end
+		end
+	end)
+end
+
+-- ─── локальные попадания капель по поверхности ───────────────────────────────
+-- Здесь используются не большие полупрозрачные пятна, а настоящие тонкие
+-- сегменты колец. Они расширяются по нормали поверхности и постепенно исчезают,
+-- поэтому на земле получается короткая концентрическая рябь, а не "дымный" шар.
+
+local RING_SEGMENTS = 20
+
+local function makeSurfaceAxes(normal)
+	local up = normal.Unit
+	local helper = math.abs(up:Dot(Vector3.new(0, 1, 0))) > 0.95
+		and Vector3.new(1, 0, 0)
+		or Vector3.new(0, 1, 0)
+	local right = helper:Cross(up).Unit
+	local back = right:Cross(up).Unit
+	return right, up, back
+end
+
+-- ─── ПУЛ ОБЪЕКТОВ (оптимизация FPS) ──────────────────────────────────────────
+-- Раньше на каждый удар капли создавались десятки Part и ParticleEmitter,
+-- а затем уничтожались. Instance.new/Destroy — самая дорогая операция здесь.
+-- Теперь все части создаются один раз и переиспользуются: FPS не проседает.
+
+local RINGS_PER_EFFECT = 3
+local effectPool = {}
+
+-- Заранее посчитанные синусы/косинусы: не считаем тригонометрию каждый кадр.
+local RING_COS, RING_SIN = {}, {}
+for i = 1, RING_SEGMENTS do
+	local angle = (i - 1) / RING_SEGMENTS * math.pi * 2
+	RING_COS[i] = math.cos(angle)
+	RING_SIN[i] = math.sin(angle)
+end
+local RING_CHORD = 2 * math.sin(math.pi / RING_SEGMENTS)
+
+local function hideEffectParts(effect)
+	for _, ring in ipairs(effect.rings) do
+		ring.active = false
+		for _, segment in ipairs(ring.segments) do
+			if segment and segment.Parent then segment.Transparency = 1 end
+		end
+	end
+	if effect.wetSpot and effect.wetSpot.Parent then effect.wetSpot.Transparency = 1 end
+	if effect.impactFlash and effect.impactFlash.Parent then effect.impactFlash.Transparency = 1 end
+end
+
+local function destroyEffectObject(effect)
+	if not effect then return end
+	for _, ring in ipairs(effect.rings or {}) do
+		for _, segment in ipairs(ring.segments or {}) do
+			if segment and segment.Parent then segment:Destroy() end
+		end
+	end
+	if effect.wetSpot and effect.wetSpot.Parent then effect.wetSpot:Destroy() end
+	if effect.impactFlash and effect.impactFlash.Parent then effect.impactFlash:Destroy() end
+	if effect.anchor and effect.anchor.Parent then effect.anchor:Destroy() end
+end
+
+local function buildEffectObject()
+	local effect = { rings = {}, owner = impactFolder }
+
+	for _ = 1, RINGS_PER_EFFECT do
+		local ring = { segments = {}, active = false }
+		for _ = 1, RING_SEGMENTS do
+			local segment = newPart("RippleSegment", impactFolder)
+			segment.Material = Enum.Material.SmoothPlastic
+			segment.Transparency = 1
+			pcall(function() segment.CastShadow = false end)
+			table.insert(ring.segments, segment)
+		end
+		table.insert(effect.rings, ring)
+	end
+
+	local wetSpot = newPart("WetSpot", impactFolder)
+	wetSpot.Shape = Enum.PartType.Ball
+	wetSpot.Material = Enum.Material.SmoothPlastic
+	wetSpot.Transparency = 1
+	pcall(function() wetSpot.CastShadow = false end)
+	effect.wetSpot = wetSpot
+
+	local impactFlash = newPart("ImpactFlash", impactFolder)
+	impactFlash.Shape = Enum.PartType.Cylinder
+	impactFlash.Material = Enum.Material.SmoothPlastic
+	impactFlash.Transparency = 1
+	pcall(function() impactFlash.CastShadow = false end)
+	effect.impactFlash = impactFlash
+
+	local anchor = newPart("RainImpact", impactFolder)
+	anchor.Size = Vector3.new(0.12, 0.12, 0.12)
+	effect.anchor = anchor
+
+	local splash = Instance.new("ParticleEmitter")
+	splash.Name = "ImpactDroplets"
+	splash.Texture = TEX_DROP
+	splash.Rate = 0
+	splash.Enabled = false
+	splash.Size = NumberSequence.new{
+		NumberSequenceKeypoint.new(0, 0.04),
+		NumberSequenceKeypoint.new(0.12, 0.11),
+		NumberSequenceKeypoint.new(0.58, 0.07),
+		NumberSequenceKeypoint.new(1, 0)
+	}
+	splash.Transparency = NumberSequence.new{
+		NumberSequenceKeypoint.new(0, 0.08),
+		NumberSequenceKeypoint.new(0.55, 0.25),
+		NumberSequenceKeypoint.new(1, 1)
+	}
+	splash.SpreadAngle = Vector2.new(38, 38)
+	splash.Acceleration = Vector3.new(0, -50, 0)
+	splash.EmissionDirection = Enum.NormalId.Top
+	splash.RotSpeed = NumberRange.new(-70, 70)
+	splash.LightEmission = 0
+	splash.LightInfluence = 1
+	pcall(function() splash.Squash = NumberSequence.new(-1.4) end)
+	splash.Parent = anchor
+	effect.splash = splash
+
+	return effect
+end
+
+getgenv().__ARCHNEM_WEATHER_RESETPOOL = function()
+	for i = #effectPool, 1, -1 do
+		destroyEffectObject(effectPool[i])
+		effectPool[i] = nil
+	end
+end
+
+local function acquireEffect()
+	while #effectPool > 0 do
+		local effect = table.remove(effectPool)
+		if effect.owner == impactFolder and effect.anchor and effect.anchor.Parent then
+			return effect
+		end
+		destroyEffectObject(effect)
+	end
+	return buildEffectObject()
+end
+
+local function releaseEffect(effect)
+	if not effect then return end
+	hideEffectParts(effect)
+	if effect.owner == impactFolder and effect.anchor and effect.anchor.Parent then
+		if #effectPool < (MAX_GROUND_IMPACTS + 2) then
+			table.insert(effectPool, effect)
+			return
+		end
+	end
+	destroyEffectObject(effect)
+end
+
+-- Совместимость со старым именем вызова.
+local function destroyGroundEffect(effect)
+	releaseEffect(effect)
+end
+
+local function clearGroundEffects()
+	for i = #groundEffects, 1, -1 do
+		releaseEffect(groundEffects[i])
+		groundEffects[i] = nil
+	end
+	for i = #puddles, 1, -1 do
+		if puddles[i].part and puddles[i].part.Parent then puddles[i].part:Destroy() end
+		puddles[i] = nil
+	end
+end
+
+-- Настраивает уже существующее кольцо (без создания новых Part).
+local function setupRippleRing(effect, index, startRadius, endRadius, delayTime, duration, color, baseTransparency)
+	local ring = effect.rings[index]
+	if not ring then return end
+	ring.startRadius = startRadius
+	ring.endRadius = endRadius
+	ring.delay = delayTime
+	ring.duration = duration
+	ring.color = color
+	ring.baseTransparency = baseTransparency
+	ring.active = true
+	for _, segment in ipairs(ring.segments) do
+		if segment and segment.Parent then
+			segment.Color = color
+			segment.Transparency = 1
+		end
+	end
+end
+
+local function updateGroundEffects()
+	local now = tick()
+	for i = #groundEffects, 1, -1 do
+		local effect = groundEffects[i]
+		local age = now - effect.started
+		local alive = false
+
+		for _, ring in ipairs(effect.rings) do
+			if ring.active then
+			local t = (age - ring.delay) / ring.duration
+			if t < 0 then
+				for _, segment in ipairs(ring.segments) do
+					if segment and segment.Parent then segment.Transparency = 1 end
+				end
+			elseif t < 1 then
+				alive = true
+				t = math.clamp(t, 0, 1)
+				-- Быстрый старт и мягкое замедление в конце, как у настоящей волны.
+				local eased = 1 - (1 - t) * (1 - t)
+				local radius = ring.startRadius + (ring.endRadius - ring.startRadius) * eased
+				-- SmootherStep убирает резкий конец круга.
+				local function smootherstep(x)
+					x = math.clamp(x, 0, 1)
+					return x * x * x * (x * (x * 6 - 15) + 10)
+				end
+				-- Появление быстрое, а угасание растянуто почти на всю жизнь кольца,
+				-- поэтому круг не пропадает рывком, а мягко тает.
+				local fadeIn = smootherstep(t / 0.12)
+				local fadeOut = smootherstep((1 - t) / 0.80)
+				-- Дополнительная мягкая кривая гасит остаток яркости к самому концу.
+				local tail = smootherstep(1 - t)
+				local visibility = fadeIn * fadeOut * (0.25 + 0.75 * tail)
+				-- Кольцо к концу становится тоньше — эффект "растворения" волны.
+				local thin = 0.35 + 0.65 * smootherstep(1 - t * 0.85)
+				local bandWidth = math.max(0.035, radius * 0.078 * thin)
+				local arcLength = math.max(0.05, RING_CHORD * radius * 1.15)
+				local segmentSize = Vector3.new(arcLength, 0.03, bandWidth)
+				local rightAxis, backAxis = effect.right, effect.back
+				local normalAxis = effect.normal
+				local basePos = effect.position + normalAxis * 0.025
+
+				for index, segment in ipairs(ring.segments) do
+					if segment and segment.Parent then
+						local c, sn = RING_COS[index], RING_SIN[index]
+						local radial = rightAxis * c + backAxis * sn
+						local tangent = backAxis * c - rightAxis * sn
+						local position = basePos + radial * radius
+						segment.Size = segmentSize
+						segment.CFrame = CFrame.fromMatrix(position, tangent, normalAxis, radial)
+						local targetTransparency = math.clamp(1 - (1 - ring.baseTransparency) * visibility, 0, 1)
+						-- Сглаживание между кадрами: прозрачность подтягивается плавно,
+						-- поэтому исчезновение выглядит как анимация, а не как скачок.
+						local currentTransparency = segment.Transparency
+						segment.Transparency = currentTransparency + (targetTransparency - currentTransparency) * 0.45
+					end
+				end
+			else
+				-- Кольцо отжило своё: доводим прозрачность до 1 плавно, а не мгновенно.
+				local stillFading = false
+				for _, segment in ipairs(ring.segments) do
+					if segment and segment.Parent then
+						if segment.Transparency < 0.995 then
+							stillFading = true
+							alive = true
+							segment.Transparency = segment.Transparency + (1 - segment.Transparency) * 0.25
+						else
+							segment.Transparency = 1
+						end
+					end
+				end
+				if not stillFading then ring.active = false end
+			end
+			end
+		end
+
+		if effect.wetSpot and effect.wetSpot.Parent then
+			local wetRaw = math.clamp((age - 0.08) / 2.20, 0, 1)
+			local wetFade = wetRaw * wetRaw * wetRaw * (wetRaw * (wetRaw * 6 - 15) + 10)
+			local wetTarget = math.clamp(effect.wetTransparency + wetFade * (1 - effect.wetTransparency), 0, 1)
+			local wetNow = effect.wetSpot.Transparency
+			effect.wetSpot.Transparency = wetNow + (wetTarget - wetNow) * 0.35
+		end
+
+		-- Короткая яркая вспышка в самом месте удара капли.
+		if effect.impactFlash and effect.impactFlash.Parent then
+			local flashT = math.clamp(age / 0.45, 0, 1)
+			local flashEase = 1 - (1 - flashT) * (1 - flashT)
+			local flashRadius = 0.05 + flashEase * 0.20
+			effect.impactFlash.Size = Vector3.new(flashRadius * 2, 0.025, flashRadius * 2)
+			local flashSmooth = flashT * flashT * flashT * (flashT * (flashT * 6 - 15) + 10)
+			effect.impactFlash.Transparency = math.clamp(0.12 + flashSmooth * 0.88, 0, 1)
+		end
+
+		if not alive and age >= effect.life then
+			releaseEffect(effect)
+			table.remove(groundEffects, i)
+		end
+	end
+end
+
+-- ─── лужи и мокрые пятна ─────────────────────────────────────────────────────
+-- Как в реальной жизни: на ровной поверхности вода скапливается в плоские
+-- лужи, тёмные пятна растекаются, держатся несколько секунд и медленно
+-- высыхают. На наклонных и водных поверхностях лужи не образуются.
+
+local function spawnPuddle(position, normal, right, back, onWater)
+	if onWater or not normal then return end
+	-- лужи появляются только на достаточно ровной поверхности
+	if normal.Y < 0.55 then return end
+	if math.random() > 0.35 then return end
+
+	-- Новая капля вблизи существующей лужи = лужа растёт (вода копится)
+	for _, existing in ipairs(puddles) do
+		if existing.part and existing.part.Parent then
+			local dx = existing.position.X - position.X
+			local dz = existing.position.Z - position.Z
+			local distSq = dx * dx + dz * dz
+			if distSq < 4.0 and math.abs(existing.position.Y - position.Y) < 1.5 then
+				existing.targetRadius = math.min(1.4, existing.targetRadius + 0.08)
+				existing.started = tick() -- лужа "оживает" и держится дольше
+				return
+			end
+		end
+	end
+
+	if #puddles >= MAX_PUDDLES then
+		local oldest = table.remove(puddles, 1)
+		if oldest.part and oldest.part.Parent then oldest.part:Destroy() end
+	end
+
+	local puddle = newPart("Puddle", impactFolder)
+	puddle.Shape = Enum.PartType.Cylinder
+	puddle.Material = Enum.Material.SmoothPlastic
+	puddle.Color = Color3.fromRGB(175, 205, 230)
+	puddle.Transparency = 0.45
+	puddle.Reflectance = 0
+	pcall(function() puddle.CastShadow = false end)
+
+	local entry = {
+		part = puddle,
+		normal = normal,
+		right = right,
+		back = back,
+		position = position,
+		started = tick(),
+		targetRadius = 0.40 + math.random() * 0.45,
+		growTime = 1.0 + math.random() * 0.7,   -- быстрое растекание воды
+		holdTime = 4.0 + math.random() * 3.0,   -- вода держится
+		fadeTime = 2.2,                         -- быстрое высыхание
+		size = 0.06,
+		baseTransparency = 0.38 + math.random() * 0.10,
+	}
+	puddle.Size = Vector3.new(entry.size * 2, 0.03, entry.size * 2)
+	puddle.CFrame = CFrame.fromMatrix(position + normal * 0.015, right, normal, back)
+	table.insert(puddles, entry)
+end
+
+local function updatePuddles(dt)
+	local now = tick()
+	for i = #puddles, 1, -1 do
+		local p = puddles[i]
+		local part = p.part
+		if not part or not part.Parent then
+			table.remove(puddles, i)
+		else
+			local age = now - p.started
+			local total = p.growTime + p.holdTime + p.fadeTime
+			if age >= total then
+				part:Destroy()
+				table.remove(puddles, i)
+			else
+				local radius, alpha
+				if age < p.growTime then
+					local g = age / p.growTime
+					g = 1 - (1 - g) * (1 - g) -- мягкое растекание
+					radius = 0.06 + (p.targetRadius - 0.06) * g
+					alpha = math.clamp(age / 0.30, 0, 1)
+				elseif age < p.growTime + p.holdTime then
+					radius = p.targetRadius
+					alpha = 1
+				else
+					local f = math.clamp((age - p.growTime - p.holdTime) / p.fadeTime, 0, 1)
+					radius = p.targetRadius * (1 - f * 0.25)
+					alpha = 1 - f
+				end
+				p.size = radius
+				part.Size = Vector3.new(radius * 2, 0.035, radius * 2)
+				part.CFrame = CFrame.fromMatrix(p.position + p.normal * 0.02, p.right, p.normal, p.back)
+				part.Transparency = p.baseTransparency + (1 - alpha) * (1 - p.baseTransparency) * 0.92
+			end
+		end
+	end
+end
+
+local function spawnGroundImpactAtHit(hit)
+	if not hit or not impactFolder or not impactFolder.Parent then return end
+	local ok, err = pcall(function()
+
+		if #groundEffects >= MAX_GROUND_IMPACTS then
+			local oldest = table.remove(groundEffects, 1)
+			releaseEffect(oldest)
+		end
+
+		local right, normal, back = makeSurfaceAxes(hit.Normal)
+		local position = hit.Position + normal * 0.035
+		local onWater = hit.Material == Enum.Material.Water
+
+		-- Берём готовый набор частей из пула вместо Instance.new (главная экономия FPS)
+		local effect = acquireEffect()
+		effect.position = position
+		effect.normal = normal
+		effect.right = right
+		effect.back = back
+		effect.started = tick()
+		effect.life = onWater and 13.50 or 12.50
+		effect.wetTransparency = onWater and 0.25 or 0.32
+
+		-- Спокойная бело-голубая рябь без свечения
+		local rippleColor = onWater and Color3.fromRGB(196, 222, 240) or Color3.fromRGB(206, 228, 244)
+		if onWater then
+			setupRippleRing(effect, 1, 0.04, 0.55, 0.00, 4.00, Color3.fromRGB(214, 234, 248), 0.02)
+			setupRippleRing(effect, 2, 0.10, 2.10, 0.00, 9.00, rippleColor, 0.08)
+			setupRippleRing(effect, 3, 0.20, 3.70, 0.90, 12.00, rippleColor, 0.14)
+		else
+			setupRippleRing(effect, 1, 0.04, 0.46, 0.00, 3.50, Color3.fromRGB(220, 238, 250), 0.02)
+			setupRippleRing(effect, 2, 0.09, 1.55, 0.00, 8.00, rippleColor, 0.10)
+			setupRippleRing(effect, 3, 0.18, 2.75, 0.80, 10.50, rippleColor, 0.16)
+		end
+
+		-- Мокрое пятно (переиспользуется)
+		local wetSpot = effect.wetSpot
+		if wetSpot and wetSpot.Parent then
+			wetSpot.Color = onWater and Color3.fromRGB(150, 190, 220) or Color3.fromRGB(170, 198, 218)
+			wetSpot.Transparency = effect.wetTransparency
+			wetSpot.Size = onWater and Vector3.new(0.04, 0.42, 0.42) or Vector3.new(0.04, 0.32, 0.32)
+			wetSpot.CFrame = CFrame.fromMatrix(position + normal * 0.018, right, normal, back)
+		end
+
+		-- Блик в точке контакта (без Neon, обычный материал)
+		local impactFlash = effect.impactFlash
+		if impactFlash and impactFlash.Parent then
+			impactFlash.Color = onWater and Color3.fromRGB(205, 230, 246) or Color3.fromRGB(215, 235, 248)
+			impactFlash.Transparency = 0.12
+			impactFlash.Size = Vector3.new(0.16, 0.025, 0.16)
+			impactFlash.CFrame = CFrame.fromMatrix(position + normal * 0.045, right, normal, back)
+		end
+
+		if effect.anchor and effect.anchor.Parent then
+			effect.anchor.CFrame = CFrame.fromMatrix(position, right, normal, back)
+		end
+
+		-- Брызги: эмиттер уже существует, только настраиваем и выпускаем
+		local splash = effect.splash
+		if splash and splash.Parent then
+			splash.Color = ColorSequence.new(onWater and Color3.fromRGB(196, 222, 242) or Color3.fromRGB(208, 230, 246))
+			splash.Lifetime = onWater and NumberRange.new(0.18, 0.34) or NumberRange.new(0.15, 0.28)
+			splash.Speed = NumberRange.new(3, 8)
+			splash:Emit(2)
+		end
+
+		-- Лужа: вода остаётся на земле и медленно высыхает
+		spawnPuddle(position, normal, right, back, onWater)
+
+		table.insert(groundEffects, effect)
+	end)
+	if not ok and not groundFXWarned then
+		groundFXWarned = true
+		warn("[ARCHNEM][Weather] Ошибка эффекта удара о землю: " .. tostring(err))
+	end
+end
+
+-- Резервный источник эффектов для случаев, когда синхронный слой ещё не
+-- успел создать капли. В обычном дожде используется точный hit от капли ниже.
+local function spawnGroundImpact(base, radius)
+	if not impactFolder or not impactFolder.Parent then return end
+	local angle = math.random() * math.pi * 2
+	local distance = math.sqrt(math.random()) * radius
+	local offset = Vector3.new(math.cos(angle) * distance, 0, math.sin(angle) * distance)
+	local origin = base + offset + Vector3.new(0, 150, 0)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.IgnoreWater = false
+	local ignore = { impactFolder }
+	if folder then table.insert(ignore, folder) end
+	if client.Character then table.insert(ignore, client.Character) end
+	params.FilterDescendantsInstances = ignore
+	local hit = workspace:Raycast(origin, Vector3.new(0, -1500, 0), params)
+	if hit then spawnGroundImpactAtHit(hit) end
+end
+
+-- ─── синхронный слой дождя и поверхности ─────────────────────────────────────
+-- Эти капли рисуются вручную. Поэтому точка, в которой видимая капля пересекает
+-- поверхность, и точка ряби совпадают, в отличие от независимых ParticleEmitter.
+local function destroySyncDrops()
+	for _, drop in ipairs(syncDrops) do
+		if drop.part and drop.part.Parent then drop.part:Destroy() end
+	end
+	syncDrops = {}
+	syncImpactTimer = 0
+end
+
+local function ensureSyncDrops()
+	if not dropFolder or not dropFolder.Parent then return end
+	while #syncDrops < SYNC_DROP_COUNT do
+		local part = newPart("SyncedRainDrop", dropFolder)
+		part.Material = Enum.Material.SmoothPlastic
+		part.Transparency = 0.38
+		pcall(function() part.CastShadow = false end)
+		table.insert(syncDrops, {
+			part = part,
+			position = nil,
+			velocity = Vector3.zero,
+			targetHit = nil,
+			impactTime = nil,
+			age = 0,
+			maxAge = 0.95,
+		})
+	end
+end
+
+local function resetSyncDrop(drop, base, dir, strength, rayParams)
+	local angle = math.random() * math.pi * 2
+	local distance = math.sqrt(math.random()) * 72
+	local height = 62 + math.random() * 48
+	local offset = Vector3.new(math.cos(angle) * distance, height, math.sin(angle) * distance)
+	local wind = dir * (strength * (0.08 + math.random() * 0.12))
+	local configuredSpeed = math.max(10, tonumber(WCFG().Rain and WCFG().Rain.Speed) or 70)
+	local startSpeed = configuredSpeed * (1.35 + math.random() * 0.40)
+
+	-- Синхронная капля почти вертикальная: её будущая точка удара
+	-- вычисляется заранее тем же лучом, по которому она будет падать.
+	drop.position = base + offset - wind * 0.35
+	drop.velocity = Vector3.new(wind.X * 0.15, -startSpeed, wind.Z * 0.15)
+	drop.targetHit = nil
+	drop.impactTime = nil
+	drop.age = 0
+	drop.maxAge = 0.95
+
+	if rayParams then
+		local ray = workspace:Raycast(drop.position, Vector3.new(0, -2500, 0), rayParams)
+		if ray and ray.Position.Y < drop.position.Y - 1 then
+			drop.targetHit = {
+				Position = ray.Position,
+				Normal = ray.Normal,
+				Material = ray.Material,
+			}
+			local fallDistance = math.max(drop.position.Y - ray.Position.Y, 1)
+			local gravity = 38
+			local discriminant = startSpeed * startSpeed + 2 * gravity * fallDistance
+			drop.impactTime = math.max(0.10, (-startSpeed + math.sqrt(discriminant)) / gravity)
+			drop.maxAge = drop.impactTime + 0.08
+		end
+	end
+
+	if drop.part and drop.part.Parent then
+		drop.part.Transparency = 0.32 + math.random() * 0.16
+		drop.part.Size = Vector3.new(0.022, 0.022, 1.0)
+		drop.part.CFrame = CFrame.lookAt(drop.position, drop.position + drop.velocity)
+	end
+end
+
+-- Один переиспользуемый RaycastParams: создание объекта каждый кадр стоило FPS.
+local sharedRayParams = RaycastParams.new()
+sharedRayParams.FilterType = Enum.RaycastFilterType.Exclude
+sharedRayParams.IgnoreWater = false
+local sharedIgnoreChar = nil
+
+local function refreshRayParams()
+	local char = client.Character
+	if sharedIgnoreChar ~= char or not sharedRayParams.FilterDescendantsInstances[1] then
+		sharedIgnoreChar = char
+		local ignore = { folder }
+		if char then table.insert(ignore, char) end
+		sharedRayParams.FilterDescendantsInstances = ignore
+	end
+	return sharedRayParams
+end
+
+local function updateSynchronizedRain(dt, base, dir, strength, groundFX)
+	if not groundFX then
+		destroySyncDrops()
+		return
+	end
+	local isRain = (active.rainNear or 0) > 0
+	if not isRain then
+		destroySyncDrops()
+		return
+	end
+
+	ensureSyncDrops()
+	syncImpactTimer = math.max(0, syncImpactTimer - dt)
+	local rainColor = WCFG().Rain and WCFG().Rain.Color
+	if not (rainColor and typeof(rainColor) == "Color3") then
+		rainColor = Color3.fromRGB(198, 220, 240)
+	end
+
+	local params = refreshRayParams()
+
+	for _, drop in ipairs(syncDrops) do
+		if not drop.position then resetSyncDrop(drop, base, dir, strength, params) end
+		local previous = drop.position
+		drop.age = drop.age + dt
+		drop.velocity = drop.velocity + Vector3.new(dir.X * strength * 0.008, -38, dir.Z * strength * 0.008) * dt
+		local nextPosition = previous + drop.velocity * dt
+		local hit = nil
+
+		if groundFX then
+			-- Основная проверка идёт по заранее рассчитанной точке поверхности.
+			-- Поэтому рябь не может "уехать" в сторону от видимой капли.
+			if drop.targetHit and drop.impactTime and drop.age >= drop.impactTime then
+				hit = drop.targetHit
+			else
+				-- Дополнительный луч ловит склоны и низкие выступы.
+				local collision = workspace:Raycast(previous, nextPosition - previous, params)
+				if collision then
+					hit = {
+					Position = collision.Position,
+					Normal = collision.Normal,
+					Material = collision.Material,
+				}
+				end
+			end
+		end
+
+		if hit then
+			if syncImpactTimer <= 0 then
+				spawnGroundImpactAtHit(hit)
+				syncImpactTimer = 0.35
+			end
+			resetSyncDrop(drop, base, dir, strength, params)
+		else
+			drop.position = nextPosition
+			if drop.age >= drop.maxAge or drop.position.Y < base.Y - 80 then
+				resetSyncDrop(drop, base, dir, strength, params)
+			else
+				local travel = nextPosition - previous
+				local travelLength = math.clamp(travel.Magnitude * 3.0, 0.65, 2.8)
+				local velocityUnit = drop.velocity.Magnitude > 0 and drop.velocity.Unit or Vector3.new(0, -1, 0)
+				local midpoint = nextPosition - velocityUnit * (travelLength * 0.35)
+				drop.part.Color = rainColor
+				drop.part.Size = Vector3.new(0.022, 0.022, travelLength)
+				drop.part.CFrame = CFrame.lookAt(midpoint, midpoint + drop.velocity)
+				drop.part.Transparency = 0.32 + math.clamp(drop.age / drop.maxAge, 0, 1) * 0.18
+			end
+		end
+	end
+end
+
+
+-- Дополнительный гарантированный семплер поверхности. Он нужен не для
+-- случайного дождя, а как страховка: даже если ParticleEmitter пропустил
+-- кадр, на поверхности всё равно появляется удар под дождевым полем.
+-- Точки выбираются ПЕРЕД КАМЕРОЙ (по направлению взгляда), чтобы эффекты
+-- попадали прямо в поле зрения игрока.
+local function getRainSurfaceSample(base, dir, strength)
+	local nearestTarget, nearestTime = nil, math.huge
+	for _, drop in ipairs(syncDrops) do
+		if drop.targetHit and drop.impactTime then
+			local distanceToImpact = math.abs(drop.impactTime - drop.age)
+			if distanceToImpact < nearestTime then
+				nearestTarget = drop.targetHit
+				nearestTime = distanceToImpact
+			end
+		end
+	end
+	if nearestTarget and nearestTime < 0.20 then
+		return nearestTarget
+	end
+
+	local params = refreshRayParams()
+
+	-- Полукруг перед камерой: вперёд 4-28 стадов, в стороны ±16
+	local look = (workspace.CurrentCamera or camera).CFrame.LookVector
+	look = Vector3.new(look.X, 0, look.Z)
+	if look.Magnitude < 0.01 then look = Vector3.new(0, 0, -1) end
+	look = look.Unit
+	local rightV = look:Cross(Vector3.new(0, 1, 0))
+	local forward = 4 + math.random() * 24
+	local side = (math.random() - 0.5) * 32
+	local sample = base + look * forward + rightV * side
+	local origin = sample + Vector3.new(0, 10, 0) - dir * strength * 0.20
+	local hit = workspace:Raycast(origin, Vector3.new(0, -2500, 0), params)
+	if hit and hit.Position.Y > base.Y - 250 then
+		return {
+			Position = hit.Position,
+			Normal = hit.Normal,
+			Material = hit.Material,
+		}
+	end
+
+	-- Последний fallback — точка прямо под игроком.
+	local centerHit = workspace:Raycast(base + Vector3.new(0, 10, 0), Vector3.new(0, -2500, 0), params)
+	if centerHit and centerHit.Position.Y > base.Y - 250 then
+		return {
+			Position = centerHit.Position,
+			Normal = centerHit.Normal,
+			Material = centerHit.Material,
+		}
+	end
+	return nil
+end
+
+local function updateGuaranteedGroundImpact(dt, base, dir, strength, groundFX)
+	fallbackImpactTimer = math.max(0, fallbackImpactTimer - dt)
+	if not groundFX or (active.rainNear or 0) <= 0 then
+		fallbackImpactTimer = 0
+		return
+	end
+	if fallbackImpactTimer > 0 then return end
+
+	local hit = getRainSurfaceSample(base, dir, strength)
+	if hit then
+		spawnGroundImpactAtHit(hit)
+		-- Вторая точка в стороне — эффекты по земле распределены плотнее
+		-- второй удар отключён: экономия рейкастов и частей (FPS)
+	else
+		-- Земля не найдена — предупреждаем один раз, чтобы было понятно,
+		-- почему эффектов нет (например, камера высоко над полом).
+		if not groundFXWarned then
+			groundFXWarned = true
+			warn("[ARCHNEM][Weather] Луч вниз не находит поверхность — эффекты на земле не создаются (камера слишком высоко или под ней нет пола)")
+		end
+	end
+	fallbackImpactTimer = 0.60
+end
+
+
+-- ─── fog restore ────────────────────────────────────────────────────────────
+
+local function restoreFog()
+	pcall(function()
+		Lighting.FogColor = origFog.Color
+		Lighting.FogStart = origFog.Start
+		Lighting.FogEnd = origFog.End
+	end)
+end
+
+-- ─── presets ────────────────────────────────────────────────────────────────
+
+local PRESETS = {
+	None         = { },
+	Rain         = {
+		rainFront = 60, rainNear = 120, rainMid = 170, rainFar = 230,
+		splash = 0, ripple = 0, mist = 0, impactRate = 5,
+		wind = 10, fog = 1800, fogColor = Color3.fromRGB(140, 155, 178),
+		moodBrightness = -0.06, moodSaturation = -0.15
+	},
+	Thunderstorm = {
+		rainFront = 100, rainNear = 200, rainMid = 280, rainFar = 380,
+		splash = 0, ripple = 0, mist = 0, impactRate = 8,
+		wind = 38, fog = 1100, fogColor = Color3.fromRGB(105, 118, 138),
+		lightning = 2.5,
+		moodBrightness = -0.10, moodSaturation = -0.25
+	},
+	Snow         = {
+		snow = 620, snowFar = 900,
+		wind = 6, fog = 1000, fogColor = Color3.fromRGB(220, 230, 242),
+		moodBrightness = -0.02, moodSaturation = -0.05
+	},
+	Sandstorm    = {
+		sand = 420,
+		wind = 70, fog = 220, fogColor = Color3.fromRGB(170, 150, 124),
+		moodBrightness = -0.03, moodSaturation = -0.1
+	},
+}
+
+active = PRESETS.None
+
+function Weather.applyPreset(name)
+	local w = WCFG()
+	w.Preset = name
+	active = PRESETS[name] or PRESETS.None
+	w.Enabled = (name ~= "None")
+
+	if not w.Enabled then
+		for _, e in pairs(emitters) do
+			if e and e.Parent then e.Enabled = false; e.Rate = 0 end
+		end
+		if flashLight then flashLight.Enabled = false; flashLight.Brightness = 0 end
+		if cc then cc.Enabled = false; cc.Brightness = 0 end
+		if rainCC then rainCC.Enabled = false end
+		if boltFolder then boltFolder:ClearAllChildren() end
+		pcall(function() if thunderSound then thunderSound:Stop() end end)
+		pcall(function() if rainSound then rainSound:Stop(); rainSound.Volume = 0 end end)
+		flash = 0
+		impactAccumulator = 0
+		fallbackImpactTimer = 0
+		clearGroundEffects()
+		destroySyncDrops()
+		restoreFog()
+		return
+	end
+
+	if not ensureEmitters() then
+		-- Камера ещё не создана — не паникуем: step сам всё включит,
+		-- как только CurrentCamera появится (rig пересоздаётся автоматически).
+		warn("[ARCHNEM][Weather] Камера не готова, пресет '" .. tostring(name) .. "' применится автоматически")
+		return
+	end
+	local groundFX = not (WCFG().GroundFX == false)
+	local rates = {
+		RainFront = active.rainFront, RainNear = active.rainNear, RainMid = active.rainMid, RainFar = active.rainFar,
+		Snow = active.snow, SnowFar = active.snowFar,
+		Sand = active.sand,
+		Splash = groundFX and active.splash or 0, Ripple = groundFX and active.ripple or 0, Mist = groundFX and active.mist or 0
+	}
+	local intensity = math.max(0, tonumber(w.Intensity) or 1)
+	for name, e in pairs(emitters) do
+		if e and e.Parent then
+			local rate = (rates[name] or 0) * intensity
+			e.Rate = rate
+			e.Enabled = rate > 0
+		end
+	end
+
+	-- Настраиваем цвет переднего и фоновых слоёв дождя из общей конфигурации.
+	local rainColor = w.Rain and w.Rain.Color
+	if rainColor and typeof(rainColor) == "Color3" then
+		for _, name in ipairs({"RainFront", "RainNear", "RainMid", "RainFar"}) do
+			if emitters[name] then emitters[name].Color = ColorSequence.new(rainColor) end
+		end
+	end
+
+	-- Одна скорость используется и частицами, и синхронными каплями.
+	local rainSpeed = math.max(10, tonumber(w.Rain and w.Rain.Speed) or 70)
+	if active.rainNear then
+		if emitters.RainFront then emitters.RainFront.Speed = NumberRange.new(rainSpeed * 1.15, rainSpeed * 1.55) end
+		if emitters.RainNear then emitters.RainNear.Speed = NumberRange.new(rainSpeed * 1.00, rainSpeed * 1.35) end
+		if emitters.RainMid then emitters.RainMid.Speed = NumberRange.new(rainSpeed * 0.90, rainSpeed * 1.20) end
+		if emitters.RainFar then emitters.RainFar.Speed = NumberRange.new(rainSpeed * 0.80, rainSpeed * 1.08) end
+	end
+
+	if active.fog then
+		pcall(function()
+			Lighting.FogColor = active.fogColor
+			Lighting.FogStart = 0
+			Lighting.FogEnd = active.fog
+		end)
+	else
+		restoreFog()
+	end
+
+	if rainCC then
+		rainCC.Enabled = true
+		rainCC.Brightness = active.moodBrightness or -0.06
+		rainCC.Saturation = active.moodSaturation or -0.15
+		rainCC.Contrast = 0.10
+		rainCC.TintColor = Color3.fromRGB(185, 205, 230)
+	end
+
+	if rainSound and rainSound.Parent then
+		pcall(function()
+			rainSound.Volume = 0
+			rainSound:Play()
+			TweenService:Create(rainSound, TweenInfo.new(2), {Volume = 1.2}):Play()
+		end)
+	end
+
+	nextStrike = tick() + (active.lightning or 999)
+end
+
+Weather.refresh = function() Weather.applyPreset(WCFG().Preset or "Rain") end
+
+-- ─── per-frame update ───────────────────────────────────────────────────────
+
+function Weather.step(dt)
+	local w = WCFG()
+	if not w.Enabled then return end
+	-- Камера может появиться позже или замениться при респауне — берём актуальную
+	local cam = resolveCamera()
+	if not cam then return end
+	camera = cam
+	if not (rig and rig.Parent) then
+		-- Rig пропал (например, старая камера уничтожена) — пересоздаём и применяем пресет заново
+		if ensureEmitters() then Weather.applyPreset(w.Preset) end
+	end
+	tAcc = tAcc + dt
+
+	local base = camera.CFrame.Position
+
+	local windPhase = tAcc * 0.08
+	local windNoise1 = math.noise(windPhase, 0, 0)
+	local windNoise2 = math.noise(windPhase * 0.3, 50, 0)
+	local gustStrength = 1 + math.max(0, math.noise(windPhase * 1.5, 100, 0)) * 1.8
+	local dir = CFrame.Angles(0, windPhase + windNoise1 * 1.2, 0).LookVector
+	local strength = (active.wind or 0) * gustStrength * (0.7 + windNoise2 * 0.6)
+
+	if (active.sand or 0) > 0 then
+		rig.Size = Vector3.new(180, 100, 14)
+		rig.CFrame = CFrame.lookAt(base - dir * 80 + Vector3.new(0, 10, 0), base + dir * 10)
+		if rigMid then rigMid.CFrame = rig.CFrame end
+		if rigFar then rigFar.CFrame = rig.CFrame end
+	elseif (active.snow or 0) > 0 or (active.snowFar or 0) > 0 then
+		rig.Size = Vector3.new(150, 26, 150)
+		rig.CFrame = CFrame.new(base + Vector3.new(0, 34, 0) - dir * strength * 0.4)
+		if rigMid then rigMid.CFrame = rig.CFrame end
+		if rigFar then rigFar.CFrame = rig.CFrame end
+	else
+		-- ДОЖДЬ ПОЛОСКАМИ: 3 динамических слоя вокруг камеры
+		rig.Size = Vector3.new(140, 10, 140)
+		rig.CFrame = CFrame.new(base + Vector3.new(0, 45, 0) - dir * strength * 0.35)
+
+		if rigMid then
+			rigMid.Size = Vector3.new(200, 12, 200)
+			rigMid.CFrame = CFrame.new(base + Vector3.new(0, 56, 0) - dir * strength * 0.5)
+		end
+
+		if rigFar then
+			rigFar.Size = Vector3.new(280, 15, 280)
+			rigFar.CFrame = CFrame.new(base + Vector3.new(0, 68, 0) - dir * strength * 0.65)
+		end
+	end
+
+	local groundY = base.Y - 10
+	pcall(function()
+		local rp = RaycastParams.new()
+		rp.FilterType = Enum.RaycastFilterType.Exclude
+		rp.FilterDescendantsInstances = { folder, client.Character }
+		local hit = workspace:Raycast(base + Vector3.new(0, 5, 0), Vector3.new(0, -300, 0), rp)
+		if hit then groundY = hit.Position.Y + 0.1 end
+	end)
+
+	local groundFX = not (WCFG().GroundFX == false)
+	local intensity = math.max(0, tonumber(w.Intensity) or 1)
+
+	-- Видимые капли и точки ударов используют одну и ту же траекторию.
+	-- Поэтому рябь появляется именно там, где капля пересекла поверхность.
+	if not groundFX then
+		impactAccumulator = 0
+		fallbackImpactTimer = 0
+		clearGroundEffects()
+	end
+	-- Каждый вызов защищён отдельным pcall: ошибка в одном слое
+	-- не должна молча отключать остальные эффекты.
+	pcall(updateSynchronizedRain, dt, base, dir, strength, groundFX)
+	pcall(updateGuaranteedGroundImpact, dt, base, dir, strength, groundFX)
+	groundUpdateAccumulator = groundUpdateAccumulator + dt
+	if groundUpdateAccumulator >= (1 / 24) then
+		local groundDt = groundUpdateAccumulator
+		groundUpdateAccumulator = 0
+		pcall(updateGroundEffects)
+		pcall(updatePuddles, groundDt)
+	end
+
+	if splashPart and splashPart.Parent and groundFX and (active.splash or 0) > 0 then
+		splashPart.CFrame = CFrame.new(base.X, groundY, base.Z)
+	end
+	if ripplePart and ripplePart.Parent and groundFX and (active.ripple or 0) > 0 then
+		ripplePart.CFrame = CFrame.new(base.X, groundY + 0.05, base.Z)
+	end
+	if mistPart and mistPart.Parent and groundFX and (active.mist or 0) > 0 then
+		mistPart.CFrame = CFrame.new(base.X, groundY + 2, base.Z)
+	end
+
+	for kind, e in pairs(emitters) do
+		if e and e.Parent and e.Enabled then
+			local windFactor, gravity
+			if kind == "RainFront" then
+				windFactor = 0.10
+				gravity = -62
+			elseif kind == "RainNear" then
+				windFactor = 0.14
+				gravity = -54
+			elseif kind == "RainMid" then
+				windFactor = 0.22
+				gravity = -46
+			elseif kind == "RainFar" then
+				windFactor = 0.34
+				gravity = -40
+			elseif kind == "Snow" or kind == "SnowFar" then
+				windFactor = 1.6
+				gravity = -1.2
+			elseif kind == "Sand" then
+				windFactor = 1.1
+				gravity = -2
+			elseif kind == "Mist" then
+				windFactor = 0.15
+				gravity = 0.3
+			else
+				windFactor = 0
+				gravity = 0
+			end
+
+			if kind == "Splash" or kind == "Ripple" then
+				-- splash/ripple не зависят от ветра
+			else
+				e.Acceleration = Vector3.new(
+					dir.X * strength * windFactor,
+					gravity,
+					dir.Z * strength * windFactor
+				)
+			end
+		end
+	end
+
+	if active.lightning and tick() >= nextStrike then
+		flash = 0.65
+		if flashLight then flashLight.Enabled = true end
+		spawnBolt()
+		if math.random() < 0.35 then task.delay(0.08 + math.random() * 0.1, spawnBolt) end
+		task.delay(0.3 + math.random() * 1.2, function()
+			pcall(function()
+				if thunderSound and thunderSound.Parent then
+					thunderSound.Volume = 0.7 + math.random() * 0.4
+					thunderSound.PlaybackSpeed = 0.8 + math.random() * 0.35
+					thunderSound:Play()
+				end
+			end)
+		end)
+		nextStrike = tick() + active.lightning * (0.5 + math.random() * 0.8)
+	end
+
+	if flash > 0 then
+		flash = math.max(0, flash - dt * 2.2)
+		if flashLight then
+			flashLight.Enabled = flash > 0.01
+			flashLight.Brightness = flash * 16
+			flashLight.Range = 60 + flash * 160
+		end
+		if cc then
+			cc.Enabled = flash > 0.01
+			cc.Brightness = flash * 0.5
+		end
+	end
+end
+
+function Weather.destroy()
+	if folder then pcall(function() folder:Destroy() end) end
+	if cc then pcall(function() cc:Destroy() end) end
+	if rainCC then pcall(function() rainCC:Destroy() end) end
+	pcall(function() if thunderSound then thunderSound:Stop() end end)
+	pcall(function() if rainSound then rainSound:Stop() end end)
+	folder, rig, rigMid, rigFar, boltFolder, impactFolder, dropFolder, flashLight, cc, rainCC, thunderSound, rainSound = nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil
+	splashPart, mistPart, ripplePart = nil, nil, nil
+	clearGroundEffects()
+	groundEffects = {}
+	destroySyncDrops()
+	fallbackImpactTimer = 0
+	impactAccumulator = 0
+	emitters = {}
+	restoreFog()
+end
+
+local weatherConn = RunService.RenderStepped:Connect(function(dt)
+	local ok, err = pcall(Weather.step, dt)
+	if not ok then warn("[ARCHNEM][Weather]", err) end
+end)
+getgenv().__ARCHNEM_RUNTIME.weatherConn = weatherConn
+getgenv().__ARCHNEM_RUNTIME.weatherDestroy = Weather.destroy
+getgenv().__ARCHNEM_WEATHER = Weather
+print("[ARCHNEM][Weather] Движок погоды готов. Включение: вкладка ESP -> Weather -> Rain/Thunderstorm (наземные эффекты отключены для FPS)")
+
+-- Дождь НЕ запускается автоматически при загрузке скрипта.
+-- Погода включается только вручную из меню: вкладка ESP -> Weather -> None/Rain/...
+-- (после выбора пресета дождь и эффекты на земле начинают работать)
+end)
+
+
+task.wait(0.1)
+
+
+-- ==============================================================================
+-- UNLOAD METHOD FOR MENU & RUNTIME
+-- ==============================================================================
+getgenv().__ARCHNEM_RUNTIME.unload = function(self)
+    if stopHeadlessHeartbeat then stopHeadlessHeartbeat() end
+    if getgenv().__ARCHNEM_RUNTIME.weatherDestroy then
+        pcall(getgenv().__ARCHNEM_RUNTIME.weatherDestroy)
+    end
+    getgenv().__ARCHNEM_WEATHER = nil
+    if client and client.Character and removeHeadlessLocal then
+        pcall(function()
+            removeHeadlessLocal(client.Character, true)
+        end)
+    end
+    if screenGui and screenGui.Parent then screenGui:Destroy() end
+    for k, conn in pairs(getgenv().__ARCHNEM_RUNTIME) do
+        if typeof(conn) == "RBXScriptConnection" then
+            conn:Disconnect()
+        end
+    end
+end
+
+-- ==============================================================================
+-- APPLY CUSTOM FONT & STARTUP LOG
+-- ==============================================================================
+
+local FONT_APPLIED = {}
+local function applyUIFont(object)
+    if not (object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox")) then
+        return
+    end
+    if FONT_APPLIED[object] then return end
+    FONT_APPLIED[object] = true
+    object.FontFace = UI_FONT
+    if not object:GetAttribute("NoFontScale") then
+        -- TextSize is explicitly controlled by UI widgets for crisp rendering
+    end
+    -- Enable crisp black outline on all UI text items automatically
+    if not object:FindFirstChildOfClass("UIStroke") then
+        local st = Instance.new("UIStroke")
+        st.Color = Color3.fromRGB(0, 0, 0)
+        st.Thickness = 1.0
+        st.Transparency = 0
+        st.Parent = object
+    end
+end
+
+for _, object in ipairs(screenGui:GetDescendants()) do
+    applyUIFont(object)
+end
+screenGui.DescendantAdded:Connect(applyUIFont)
+screenGui.DescendantRemoving:Connect(function(object)
+    FONT_APPLIED[object] = nil
+end)
+
+print(("[ARCHNEM] ✅ UI & Full Functionality loaded successfully! Шрифт: %s | DEL — открыть/закрыть. Верхняя панель — перемещение. 5 вкладок активны!"):format(FONT_SOURCE))
